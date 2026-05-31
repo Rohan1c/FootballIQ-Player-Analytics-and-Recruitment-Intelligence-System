@@ -1,4 +1,4 @@
-```md
+
 # Football Representation Learning
 
 ANN-based football analytics project using representation learning and latent embeddings to identify stylistically similar football players.
@@ -48,4 +48,3 @@ Football Statistics
 ## Objective
 
 The project aims to learn hidden football playstyle representations using deep learning and optimized feature selection techniques to build a player similarity engine for scouting and tactical analysis.
-```
