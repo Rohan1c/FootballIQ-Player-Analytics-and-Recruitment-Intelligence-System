@@ -6,12 +6,12 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense
 
-df = pd.read_csv("data/players_data-2025_2026.csv")
+df = pd.read_csv("data/final_merged_dataset.csv")
 
 selected_features = [
 
-    # Availability / tactical usage
-    "Age",
+    # Usage / tactical importance
+    "Age_x",
     "MP",
     "Starts",
     "Min",
@@ -22,7 +22,7 @@ selected_features = [
     "PPM",
     "On-Off",
 
-    # Attacking output
+    # Match production
     "Gls",
     "Ast",
     "G+A",
@@ -30,14 +30,14 @@ selected_features = [
     "PK",
     "PKatt",
 
-    # Shooting profile
+    # Shooting
     "Sh",
     "SoT",
     "Sh/90",
     "SoT/90",
     "G/Sh",
 
-    # Creativity / progression proxies
+    # Creativity / progression
     "Crs",
     "Fld",
     "Fls",
@@ -46,12 +46,60 @@ selected_features = [
     "+/-",
     "+/-90",
 
-    # Defensive contribution
+    # Defensive
     "TklW",
     "Int",
 
     # Discipline
-    "CrdY"
+    "CrdY",
+
+    # FIFA STYLE ATTRIBUTES 😭🔥
+
+    # Pace / movement
+    "Pace",
+    "Acceleration",
+    "Sprint Speed",
+
+    # Shooting style
+    "Shooting",
+    "Positioning",
+    "Finishing",
+    "Shot Power",
+    "Long Shots",
+    "Volleys",
+    "Penalties",
+
+    # Creativity / passing
+    "Passing",
+    "Vision",
+    "Crossing",
+    "Free Kick Accuracy",
+    "Short Passing",
+    "Long Passing",
+    "Curve",
+
+    # Dribbling / agility
+    "Dribbling",
+    "Agility",
+    "Balance",
+    "Reactions",
+    "Ball Control",
+    "Composure",
+
+    # Defensive IQ
+    "Defending",
+    "Interceptions",
+    "Heading Accuracy",
+    "Def Awareness",
+    "Standing Tackle",
+    "Sliding Tackle",
+
+    # Physical profile
+    "Physicality",
+    "Jumping",
+    "Stamina",
+    "Strength",
+    "Aggression"
 ]
 
 df = df.drop_duplicates(subset=["Player"])
@@ -66,6 +114,45 @@ df = df[["Player", "Pos"] + selected_features]
 
 df = df.reset_index(drop=True)
 
+fifa_features = [
+    "Pace",
+    "Acceleration",
+    "Sprint Speed",
+    "Shooting",
+    "Positioning",
+    "Finishing",
+    "Shot Power",
+    "Long Shots",
+    "Volleys",
+    "Penalties",
+    "Passing",
+    "Vision",
+    "Crossing",
+    "Free Kick Accuracy",
+    "Short Passing",
+    "Long Passing",
+    "Curve",
+    "Dribbling",
+    "Agility",
+    "Balance",
+    "Reactions",
+    "Ball Control",
+    "Composure",
+    "Defending",
+    "Interceptions",
+    "Heading Accuracy",
+    "Def Awareness",
+    "Standing Tackle",
+    "Sliding Tackle",
+    "Physicality",
+    "Jumping",
+    "Stamina",
+    "Strength",
+    "Aggression"
+]
+
+df[fifa_features] = df[fifa_features] * 0.3
+
 scaler = StandardScaler()
 
 scaled_data = scaler.fit_transform(df[selected_features])
@@ -74,12 +161,12 @@ input_dim = scaled_data.shape[1]
 
 input_layer = Input(shape=(input_dim,))
 
-encoded = Dense(64, activation="relu")(input_layer)
+encoded = Dense(128, activation="relu")(input_layer)
+encoded = Dense(64, activation="relu")(encoded)
 encoded = Dense(32, activation="relu")(encoded)
-encoded = Dense(16, activation="relu")(encoded)
 
-decoded = Dense(32, activation="relu")(encoded)
-decoded = Dense(64, activation="relu")(decoded)
+decoded = Dense(64, activation="relu")(encoded)
+decoded = Dense(128, activation="relu")(decoded)
 decoded = Dense(input_dim, activation="linear")(decoded)
 
 autoencoder = Model(input_layer, decoded)
@@ -112,4 +199,3 @@ encoder.save("models/encoder_model.keras")
 
 print("Embeddings saved successfully!")
 print("Encoder model saved!")
-

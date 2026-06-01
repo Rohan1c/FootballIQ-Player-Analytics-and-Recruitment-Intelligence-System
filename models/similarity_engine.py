@@ -6,7 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-df = pd.read_csv("data/players_data-2025_2026.csv")
+df = pd.read_csv("data/final_merged_dataset.csv")
 
 df = df.drop_duplicates(subset=["Player"])
 df = df.reset_index(drop=True)
@@ -15,9 +15,24 @@ embeddings = np.load("models/latent_embeddings.npy")
 
 similarity_matrix = cosine_similarity(embeddings)
 
-player_name = "Erling Haaland"
+player_name = "Michael Olise"
 
-player_index = df[df["Player"] == player_name].index[0]
+matching_players = df[
+    df["Player"]
+    .str.lower()
+    .str.contains(player_name.lower(), na=False)
+]
+
+if matching_players.empty:
+
+    print("Player not found!")
+
+    exit()
+
+player_index = matching_players.index[0]
+
+print("\nMatched Player:")
+print(df.iloc[player_index]["Player"])
 
 player_position = df.iloc[player_index]["Pos"]
 

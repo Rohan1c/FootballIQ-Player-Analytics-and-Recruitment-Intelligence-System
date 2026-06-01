@@ -1,12 +1,13 @@
 import pandas as pd
+
 from sklearn.preprocessing import StandardScaler
 
-df = pd.read_csv("data/players_data-2025_2026.csv")
+df = pd.read_csv("data/final_merged_dataset.csv")
 
 selected_features = [
 
-    # Availability / tactical usage
-    "Age",
+    # Usage / tactical importance
+    "Age_x",
     "MP",
     "Starts",
     "Min",
@@ -17,7 +18,7 @@ selected_features = [
     "PPM",
     "On-Off",
 
-    # Attacking output
+    # Match production
     "Gls",
     "Ast",
     "G+A",
@@ -25,14 +26,14 @@ selected_features = [
     "PK",
     "PKatt",
 
-    # Shooting profile
+    # Shooting
     "Sh",
     "SoT",
     "Sh/90",
     "SoT/90",
     "G/Sh",
 
-    # Creativity / progression proxies
+    # Creativity / progression
     "Crs",
     "Fld",
     "Fls",
@@ -41,12 +42,60 @@ selected_features = [
     "+/-",
     "+/-90",
 
-    # Defensive contribution
+    # Defensive
     "TklW",
     "Int",
 
     # Discipline
-    "CrdY"
+    "CrdY",
+
+    # FIFA STYLE ATTRIBUTES 😭🔥
+
+    # Pace / movement
+    "Pace",
+    "Acceleration",
+    "Sprint Speed",
+
+    # Shooting style
+    "Shooting",
+    "Positioning",
+    "Finishing",
+    "Shot Power",
+    "Long Shots",
+    "Volleys",
+    "Penalties",
+
+    # Creativity / passing
+    "Passing",
+    "Vision",
+    "Crossing",
+    "Free Kick Accuracy",
+    "Short Passing",
+    "Long Passing",
+    "Curve",
+
+    # Dribbling / agility
+    "Dribbling",
+    "Agility",
+    "Balance",
+    "Reactions",
+    "Ball Control",
+    "Composure",
+
+    # Defensive IQ
+    "Defending",
+    "Interceptions",
+    "Heading Accuracy",
+    "Def Awareness",
+    "Standing Tackle",
+    "Sliding Tackle",
+
+    # Physical profile
+    "Physicality",
+    "Jumping",
+    "Stamina",
+    "Strength",
+    "Aggression"
 ]
 
 df = df.drop_duplicates(subset=["Player"])
@@ -58,6 +107,48 @@ for col in selected_features:
         df[col] = df[col].fillna(df[col].median())
 
 df = df[["Player", "Pos"] + selected_features]
+
+df = df.reset_index(drop=True)
+
+# Reduce FIFA influence 😭🔥
+fifa_features = [
+    "Pace",
+    "Acceleration",
+    "Sprint Speed",
+    "Shooting",
+    "Positioning",
+    "Finishing",
+    "Shot Power",
+    "Long Shots",
+    "Volleys",
+    "Penalties",
+    "Passing",
+    "Vision",
+    "Crossing",
+    "Free Kick Accuracy",
+    "Short Passing",
+    "Long Passing",
+    "Curve",
+    "Dribbling",
+    "Agility",
+    "Balance",
+    "Reactions",
+    "Ball Control",
+    "Composure",
+    "Defending",
+    "Interceptions",
+    "Heading Accuracy",
+    "Def Awareness",
+    "Standing Tackle",
+    "Sliding Tackle",
+    "Physicality",
+    "Jumping",
+    "Stamina",
+    "Strength",
+    "Aggression"
+]
+
+df[fifa_features] = df[fifa_features] * 0.3
 
 print(df.head())
 
