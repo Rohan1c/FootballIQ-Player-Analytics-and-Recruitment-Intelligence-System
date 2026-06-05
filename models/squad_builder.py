@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import euclidean_distances
 
 df = pd.read_csv(
     "data/final_merged_dataset.csv"
@@ -11,8 +11,14 @@ embeddings = np.load(
     "models/latent_embeddings.npy"
 )
 
-similarity_matrix = cosine_similarity(
+distance_matrix = euclidean_distances(
     embeddings
+)
+
+max_dist = np.max(distance_matrix)
+
+similarity_matrix = (
+    1 - distance_matrix / max_dist
 )
 
 

@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import euclidean_distances
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -74,8 +74,14 @@ def get_similar_players(player_name, top_n=5):
         embeddings
     )
 
-    similarity_matrix = cosine_similarity(
-        weighted_embeddings
+    distance_matrix = euclidean_distances(
+    weighted_embeddings
+    )
+
+    max_dist = np.max(distance_matrix)
+
+    similarity_matrix = (
+        1 - distance_matrix / max_dist
     )
 
     same_position_indices = df[

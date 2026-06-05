@@ -1,7 +1,8 @@
 import sys
 import numpy as np
 import pandas as pd
-from sklearn.metrics.pairwise import cosine_similarity
+
+from sklearn.metrics.pairwise import euclidean_distances
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -9,7 +10,15 @@ df = pd.read_csv("data/final_merged_dataset.csv")
 
 embeddings = np.load("models/latent_embeddings.npy")
 
-similarity_matrix = cosine_similarity(embeddings)
+distance_matrix = euclidean_distances(
+    embeddings
+)
+
+max_dist = np.max(distance_matrix)
+
+similarity_matrix = (
+    1 - distance_matrix / max_dist
+)
 
 
 def get_position_fit(pos1, pos2):

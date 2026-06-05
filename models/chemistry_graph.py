@@ -2,13 +2,21 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics.pairwise import euclidean_distances
 
 df = pd.read_csv("data/final_merged_dataset.csv")
 
 embeddings = np.load("models/latent_embeddings.npy")
 
-similarity_matrix = cosine_similarity(embeddings)
+distance_matrix = euclidean_distances(
+    embeddings
+)
+
+max_dist = np.max(distance_matrix)
+
+similarity_matrix = (
+    1 - distance_matrix / max_dist
+)
 
 
 def get_player_index(player_name):
