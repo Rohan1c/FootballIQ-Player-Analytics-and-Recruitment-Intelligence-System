@@ -321,7 +321,7 @@ def build_candidate_pools(
 
             for idx, score
 
-            in scored[:100]
+            in scored[:15]
 
         ]
 

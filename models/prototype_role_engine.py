@@ -59,88 +59,154 @@ df[FEATURE_COLS] = scaler.fit_transform(
 POSITION_ROLE_MAP = {
 
     "GK": [
-
         "Goalkeeper"
-
     ],
 
     "CB": [
-
         "Ball Playing Defender",
         "Defensive Defender"
-
     ],
 
     "RB": [
-
         "Ball Playing Defender",
         "Wide Winger"
-
     ],
 
     "LB": [
-
         "Ball Playing Defender",
         "Wide Winger"
-
     ],
 
     "CDM": [
-
         "Deep Playmaker",
-        "Ball Winner"
-
+        "Ball Winner",
+        "Box-to-Box"
     ],
 
     "CM": [
-
         "Deep Playmaker",
+        "Ball Winner",
         "Box-to-Box",
         "Creative Playmaker"
-
     ],
 
     "CAM": [
-
         "Creative Playmaker",
-        "False 9"
-
+        "False 9",
+        "Box-to-Box"
     ],
 
     "RW": [
-
         "Wide Winger",
+        "Creative Winger",
         "Inside Forward"
-
     ],
 
     "LW": [
-
         "Wide Winger",
+        "Creative Winger",
         "Inside Forward"
-
     ],
 
     "RM": [
-
         "Wide Winger",
-        "Creative Winger"
-
+        "Creative Winger",
+        "Box-to-Box"
     ],
 
     "LM": [
-
         "Wide Winger",
-        "Creative Winger"
-
+        "Creative Winger",
+        "Box-to-Box"
     ],
 
     "ST": [
-
         "Poacher",
         "Target Forward",
         "False 9"
+    ]
+}
 
+
+# =====================================
+# ROLE WEIGHTS
+# =====================================
+
+ROLE_WEIGHTS = {
+
+    "Deep Playmaker": [
+        "Passing",
+        "Vision",
+        "Ball Control"
+    ],
+
+    "Creative Playmaker": [
+        "Passing",
+        "Vision",
+        "Dribbling",
+        "Ball Control"
+    ],
+
+    "Ball Winner": [
+        "Defending",
+        "Interceptions",
+        "Standing Tackle",
+        "Aggression"
+    ],
+
+    "Box-to-Box": [
+        "Passing",
+        "Defending",
+        "Physicality",
+        "Stamina"
+    ],
+
+    "Wide Winger": [
+        "Pace",
+        "Crossing",
+        "Dribbling"
+    ],
+
+    "Creative Winger": [
+        "Dribbling",
+        "Vision",
+        "Passing"
+    ],
+
+    "Inside Forward": [
+        "Pace",
+        "Finishing",
+        "Dribbling"
+    ],
+
+    "Poacher": [
+        "Finishing",
+        "Positioning",
+        "Shooting"
+    ],
+
+    "Target Forward": [
+        "Strength",
+        "Physicality",
+        "Finishing"
+    ],
+
+    "False 9": [
+        "Passing",
+        "Vision",
+        "Ball Control"
+    ],
+
+    "Ball Playing Defender": [
+        "Passing",
+        "Defending",
+        "Interceptions"
+    ],
+
+    "Defensive Defender": [
+        "Defending",
+        "Standing Tackle",
+        "Strength"
     ]
 }
 
@@ -152,89 +218,65 @@ POSITION_ROLE_MAP = {
 ROLE_EXEMPLARS = {
 
     "Deep Playmaker": [
-
         "Rodri",
         "Kimmich"
-
     ],
 
     "Creative Playmaker": [
-
         "Kevin De Bruyne",
         "Pedri",
         "Bernardo Silva"
-
     ],
 
     "Ball Winner": [
-
         "Caicedo",
         "Declan Rice",
         "Tchouameni"
-
     ],
 
     "Box-to-Box": [
-
         "Valverde",
         "Bellingham"
-
     ],
 
     "Wide Winger": [
-
         "Raphinha",
         "Saka"
-
     ],
 
     "Creative Winger": [
-
         "Wirtz",
         "Palmer"
-
     ],
 
     "Inside Forward": [
-
         "Son",
         "Kvaratskhelia"
-
     ],
 
     "Poacher": [
-
         "Haaland",
         "Kane"
-
     ],
 
     "Target Forward": [
-
         "Lukaku",
         "Osimhen"
-
     ],
 
     "False 9": [
-
         "Benzema",
         "Griezmann"
-
     ],
 
     "Ball Playing Defender": [
-
         "Van Dijk",
         "Saliba"
-
     ],
 
     "Defensive Defender": [
-
         "Milenkovic",
         "Tomori"
-
     ]
 }
 
@@ -327,8 +369,7 @@ def get_role_scores(player):
         }
 
     allowed_roles = (
-        POSITION_ROLE_MAP
-        .get(
+        POSITION_ROLE_MAP.get(
             position,
             list(
                 ROLE_PROTOTYPES.keys()
@@ -338,9 +379,8 @@ def get_role_scores(player):
 
     player_vector = player[
         FEATURE_COLS
-    ].values.reshape(
-        1,
-        -1
+    ].values.astype(
+        float
     )
 
     scores = {}
@@ -350,27 +390,135 @@ def get_role_scores(player):
         if role not in ROLE_PROTOTYPES:
             continue
 
-        prototype = (
-            ROLE_PROTOTYPES[
-                role
-            ]
-            .reshape(
-                1,
-                -1
-            )
-        )
-
-        similarity = (
-            cosine_similarity(
-                player_vector,
-                prototype
-            )[0][0]
-        )
-
-        scores[
+        prototype = ROLE_PROTOTYPES[
             role
-        ] = float(
-            similarity
+        ]
+
+        similarity = cosine_similarity(
+            player_vector.reshape(1, -1),
+            prototype.reshape(1, -1)
+        )[0][0]
+
+        # -------------------------
+        # ROLE SPECIFIC BOOSTS
+        # -------------------------
+
+        bonus = 0
+
+        if role == "Deep Playmaker":
+
+            bonus += (
+                player["Passing"] * 0.10
+            )
+
+            bonus += (
+                player["Vision"] * 0.10
+            )
+
+        elif role == "Creative Playmaker":
+
+            bonus += (
+                player["Vision"] * 0.10
+            )
+
+            bonus += (
+                player["Dribbling"] * 0.10
+            )
+
+        elif role == "Ball Winner":
+
+            bonus += (
+                player["Defending"] * 0.10
+            )
+
+            bonus += (
+                player["Interceptions"] * 0.10
+            )
+
+        elif role == "Box-to-Box":
+
+            bonus += (
+                player["Physicality"] * 0.08
+            )
+
+            bonus += (
+                player["Passing"] * 0.08
+            )
+
+        elif role == "Wide Winger":
+
+            bonus += (
+                player["Pace"] * 0.10
+            )
+
+            bonus += (
+                player["Crossing"] * 0.10
+            )
+
+        elif role == "Creative Winger":
+
+            bonus += (
+                player["Dribbling"] * 0.10
+            )
+
+            bonus += (
+                player["Vision"] * 0.10
+            )
+
+        elif role == "Inside Forward":
+
+            bonus += (
+                player["Finishing"] * 0.10
+            )
+
+            bonus += (
+                player["Pace"] * 0.10
+            )
+
+        elif role == "Poacher":
+
+            bonus += (
+                player["Finishing"] * 0.15
+            )
+
+        elif role == "Target Forward":
+
+            bonus += (
+                player["Strength"] * 0.15
+            )
+
+        elif role == "False 9":
+
+            bonus += (
+                player["Passing"] * 0.10
+            )
+
+            bonus += (
+                player["Vision"] * 0.10
+            )
+
+        elif role == "Ball Playing Defender":
+
+            bonus += (
+                player["Passing"] * 0.10
+            )
+
+            bonus += (
+                player["Defending"] * 0.08
+            )
+
+        elif role == "Defensive Defender":
+
+            bonus += (
+                player["Defending"] * 0.12
+            )
+
+            bonus += (
+                player["Strength"] * 0.08
+            )
+
+        scores[role] = float(
+            similarity + bonus
         )
 
     return scores
@@ -390,20 +538,41 @@ def get_primary_role(player):
 
         return "Undefined"
 
-    best_role = max(
-        scores,
-        key=scores.get
+    sorted_scores = sorted(
+
+        scores.items(),
+
+        key=lambda x: x[1],
+
+        reverse=True
+
     )
 
-    best_score = scores[
-        best_role
-    ]
+    best_role = sorted_scores[0][0]
+    best_score = sorted_scores[0][1]
 
-    # confidence threshold
+    # only one role available
 
-    if best_score < 0.80:
+    if len(sorted_scores) == 1:
 
-        return "Undefined"
+        return best_role
+
+    second_score = (
+        sorted_scores[1][1]
+    )
+
+    confidence_gap = (
+        best_score -
+        second_score
+    )
+
+    # if roles are extremely close,
+    # still return best role,
+    # but avoid hard 0.80 threshold
+
+    if confidence_gap < 0.01:
+
+        return best_role
 
     return best_role
 
