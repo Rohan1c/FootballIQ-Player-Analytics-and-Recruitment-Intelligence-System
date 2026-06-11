@@ -5,7 +5,7 @@ from compatibility_engine import (
     compatibility_score
 )
 
-from prototype_role_engine import (
+from models.prototype_role_engine import (
     get_primary_role
 )
 

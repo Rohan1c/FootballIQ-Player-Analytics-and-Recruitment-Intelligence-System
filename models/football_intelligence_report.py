@@ -1,26 +1,26 @@
 import pandas as pd
 import numpy as np
 
-from prototype_role_engine import (
+from models.prototype_role_engine import (
     df,
     get_primary_role,
     get_role_scores
 )
 
-from compatibility_engine import (
+from models.compatibility_engine import (
     compatibility_score,
     find_player
 )
 
-from transfer_engine import (
+from models.transfer_engine import (
     replacement_score
 )
 
-from squad_builder import (
+from models.squad_builder import (
     best_trio
 )
 
-from starting_xi_builder import (
+from models.starting_xi_builder import (
     build_xi
 )
 

@@ -1,11 +1,11 @@
 import pandas as pd
 
-from compatibility_engine import (
+from models.compatibility_engine import (
     compatibility_score,
     df
 )
 
-from prototype_role_engine import (
+from models.prototype_role_engine import (
     get_primary_role,
     get_role_scores
 )

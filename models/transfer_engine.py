@@ -3,11 +3,11 @@ import numpy as np
 
 from sklearn.metrics.pairwise import euclidean_distances
 
-from compatibility_engine import (
+from models.compatibility_engine import (
     df
 )
 
-from prototype_role_engine import (
+from models.prototype_role_engine import (
     get_primary_role
 )
 
