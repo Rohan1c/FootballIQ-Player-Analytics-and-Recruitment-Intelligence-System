@@ -341,20 +341,9 @@ ROLE_WEIGHTS = {
 ROLE_EXEMPLARS = {
 
     "Deep Playmaker": [
-        # v6: Rodri removed. He is a CDM/Ball
-        # Winner hybrid — his high Interceptions
-        # and Defending contaminate the centroid
-        # AND the -0.08 Interceptions penalty
-        # in get_role_scores() fires against
-        # Rodri himself when evaluating Deep
-        # Playmaker, which is self-defeating.
-        # Busquets kept. Xabi Alonso and
-        # Pirlo added as purest deep playmaker
-        # archetypes: elite Passing + Vision,
-        # low Interceptions, low Aggression.
-        "Busquets",
-        "Xabi Alonso",
-        "Pirlo",
+        "Rodri",
+        "Hakan",
+        "Enzo",
     ],
 
     "Creative Playmaker": [
@@ -710,13 +699,13 @@ def get_role_scores(player):
             # At 0.25: 0.85² × 0.25 = 0.180
             #          0.65² × 0.25 = 0.106
             # That 0.074 gap is the separator.
-            bonus += player["Passing"]        ** 2 * 0.25
+            bonus += player["Passing"]        ** 2 * 0.26
             bonus += player["Vision"]         ** 2 * 0.18
             bonus += player["Ball Control"]         * 0.08
             bonus -= player["Dribbling"]            * 0.06
             bonus -= player["Pace"]                 * 0.05
-            bonus -= player["Aggression"]           * 0.06
-            bonus -= player["Interceptions"]        * 0.04
+            bonus -= player["Aggression"] * 0.06
+            bonus -= player["Interceptions"] * 0.08
 
         elif role == "Creative Playmaker":
 
@@ -734,67 +723,24 @@ def get_role_scores(player):
             # Vision penalised harder than v2 —
             # a high-Vision player belongs in
             # Deep Playmaker, not here.
-            bonus += player["Defending"]     ** 2 * 0.15
-            bonus += player["Interceptions"] ** 2 * 0.12
-            bonus += player["Aggression"]    ** 2 * 0.10
+            bonus += player["Defending"]     ** 2 * 0.18
+            bonus += player["Interceptions"] ** 2 * 0.15
+            bonus += player["Aggression"]    ** 2 * 0.12
             bonus -= player["Vision"]              * 0.10
             bonus -= player["Dribbling"]           * 0.06
 
         elif role == "Box-to-Box":
 
-            # v6: Defending² removed as primary
-            # B2B discriminator. It was the root
-            # cause of Rice and Ugarte bleeding
-            # into B2B — both have elite Defending
-            # so they scored 0.14–0.18 bonus here.
-            # Rice and Ugarte are now Ball Winner
-            # exemplars, so the Ball Winner
-            # prototype will pull them correctly.
-            #
-            # The true B2B signature is:
-            # - Physicality + Stamina (work rate)
-            # - Moderate Passing (not elite)
-            # - Moderate Vision (not elite)
-            # The "not elite" part is the key:
-            # B2B players are defined by what they
-            # DON'T have (specialist peaks) rather
-            # than what they do.
-            #
-            # Vision² penalty added: if a player
-            # has elite Vision (>0.80 normalised)
-            # the squared penalty is much larger,
-            # creating a hard curve away from the
-            # Creative Playmaker space without
-            # hurting players with average Vision.
-            # At Vision=0.85: 0.85² × 0.10 = 0.072
-            # At Vision=0.60: 0.60² × 0.10 = 0.036
-            # Difference of 0.036 — meaningful.
-            b2b_attrs = [
-                "Passing",
-                "Defending",
-                "Physicality",
-                "Pace",
-            ]
-
-            available = [
-                a for a in b2b_attrs
-                if a in player.index
-            ]
-
-            vals = [
-                float(player[a])
-                for a in available
-            ]
-
-            balance_penalty = (
-                -np.std(vals) * 0.10
-            )
-
-            bonus += balance_penalty
             bonus += player["Physicality"] ** 2 * 0.12
-            bonus += player["Passing"]           * 0.05
-            bonus -= player["Vision"]      ** 2 * 0.10
-            bonus -= player["Vision"]            * 0.04
+            bonus += player["Stamina"] ** 2 * 0.08
+            bonus += player["Passing"] * 0.06
+            bonus += player["Defending"] * 0.06
+
+            bonus -= player["Vision"] * 0.02
+            bonus -= player["Interceptions"] * 0.08
+            bonus -= player["Aggression"] * 0.06
+            bonus += player["Stamina"] ** 2 * 0.08
+            bonus += player["Physicality"] ** 2 * 0.08
 
         elif role == "Wide Winger":
 
@@ -849,14 +795,14 @@ def get_role_scores(player):
                 and pos_attr in FEATURE_COLS
             )
 
-            bonus += player["Finishing"] ** 2 * 0.30
+            bonus += player["Finishing"] ** 2 * 0.24
             bonus += player["Shooting"]        * 0.08
             bonus -= player["Passing"]         * 0.10
             bonus -= player["Vision"]          * 0.10
 
             if has_positioning:
                 bonus += (
-                    float(player[pos_attr]) ** 2 * 0.15
+                    float(player[pos_attr]) ** 2 * 0.10
                 )
 
         elif role == "Target Forward":
@@ -1011,6 +957,7 @@ def find_player(player_name):
         df["Player"].str.contains(
             player_name,
             case=False,
+            regex=False,
             na=False
         )
     ]
