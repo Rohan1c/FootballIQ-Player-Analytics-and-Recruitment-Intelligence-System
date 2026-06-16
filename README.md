@@ -248,5 +248,5 @@ MIT License
 ## Author
 
 **Rohan Srinivas Ponnana**  
-Artificial Intelligence & Machine Learning  
+CSE Artificial Intelligence & Machine Learning  
 Football Analytics · Representation Learning · Recruitment Intelligence
