@@ -1,6 +1,6 @@
 # FootballIQ: Player Analytics and Recruitment Intelligence System
 
-An AI-powered football intelligence platform combining autoencoder-based representation learning, role archetype discovery, similarity modeling, compatibility analysis, transfer recommendations, and tactical squad construction using FBref statistics and FIFA attributes (~2057 players).
+An AI-powered football intelligence platform combining autoencoder-based representation learning, role archetype discovery, similarity modeling, compatibility analysis, transfer recommendations, and tactical squad construction using FBref statistics and FIFA attributes (~2058 players).
 
 ---
 
