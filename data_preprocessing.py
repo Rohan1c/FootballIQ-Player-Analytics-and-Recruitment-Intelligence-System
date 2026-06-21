@@ -49,8 +49,6 @@ selected_features = [
     # Discipline
     "CrdY",
 
-    # FIFA STYLE ATTRIBUTES 😭🔥
-
     # Pace / movement
     "Pace",
     "Acceleration",
@@ -110,7 +108,6 @@ df = df[["Player", "Pos"] + selected_features]
 
 df = df.reset_index(drop=True)
 
-# Reduce FIFA influence 😭🔥
 fifa_features = [
     "Pace",
     "Acceleration",
