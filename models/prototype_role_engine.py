@@ -5,18 +5,11 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-# =====================================
-# LOAD DATA
-# =====================================
-
 df = pd.read_csv(
     "data/final_merged_dataset.csv"
 )
 
 
-# =====================================
-# FEATURES
-# =====================================
 
 FEATURE_COLS = [
 
@@ -38,20 +31,11 @@ FEATURE_COLS = [
     "Strength",
     "Aggression",
 
-    # Previously referenced in ROLE_WEIGHTS
-    # but missing from FEATURE_COLS — now added.
-    # If not present in dataset, the guard below
-    # will drop them safely with a warning.
     "Stamina",
     "Positioning",
 
 ]
 
-# =====================================
-# FEATURE GUARD
-# =====================================
-# Drop any FEATURE_COLS that don't exist
-# in the dataset rather than crashing silently.
 
 _missing = [
     f for f in FEATURE_COLS
@@ -70,9 +54,6 @@ if _missing:
     ]
 
 
-# =====================================
-# NORMALIZE
-# =====================================
 
 scaler = MinMaxScaler()
 
@@ -81,15 +62,6 @@ df[FEATURE_COLS] = scaler.fit_transform(
 )
 
 
-# =====================================
-# POSITION ALIASES
-# =====================================
-# Normalizes non-canonical position strings
-# (e.g. "LCB", "DM", "AM") to the keys
-# used in POSITION_ROLE_MAP.
-# Without this, any unrecognised position
-# string falls through to the full role list,
-# giving a CB access to Poacher / Winger roles.
 
 POSITION_ALIASES = {
     "LCB": "CB",
