@@ -7,10 +7,6 @@ from models.prototype_role_engine import (
     get_primary_role
 )
 
-# =====================================
-# LOAD DATA
-# =====================================
-
 df = pd.read_csv(
     "data/final_merged_dataset.csv"
 )
@@ -31,10 +27,6 @@ similarity_matrix = (
     1 -
     distance_matrix / max_dist
 )
-
-# =====================================
-# ROLE SYNERGY
-# =====================================
 
 ROLE_SYNERGY = {
 
@@ -104,10 +96,6 @@ ROLE_SYNERGY = {
     ]
 }
 
-# =====================================
-# POSITION GROUPS
-# =====================================
-
 POSITION_GROUPS = {
 
     "CB": "DEF",
@@ -127,10 +115,6 @@ POSITION_GROUPS = {
 
     "GK": "GK"
 }
-
-# =====================================
-# POSITION FIT
-# =====================================
 
 def position_fit(
     player1,
