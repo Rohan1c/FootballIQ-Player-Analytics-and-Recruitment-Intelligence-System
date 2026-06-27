@@ -86,10 +86,6 @@ def normalize_position(raw_position: str) -> str:
     return POSITION_ALIASES.get(pos, pos)
 
 
-# =====================================
-# POSITION GATING
-# =====================================
-
 POSITION_ROLE_MAP = {
 
     "GK": [
@@ -162,13 +158,6 @@ POSITION_ROLE_MAP = {
 }
 
 
-# =====================================
-# ROLE WEIGHTS
-# =====================================
-# Reference only — not used directly in
-# scoring math, but kept in sync with
-# FEATURE_COLS so they serve as accurate
-# documentation of each role's identity.
 
 ROLE_WEIGHTS = {
 
@@ -196,7 +185,7 @@ ROLE_WEIGHTS = {
         "Passing",
         "Defending",
         "Physicality",
-        "Stamina"       # now in FEATURE_COLS
+        "Stamina"       
     ],
 
     "Wide Winger": [
@@ -219,7 +208,7 @@ ROLE_WEIGHTS = {
 
     "Poacher": [
         "Finishing",
-        "Positioning",  # now in FEATURE_COLS
+        "Positioning",  
         "Shooting"
     ],
 
@@ -249,66 +238,7 @@ ROLE_WEIGHTS = {
 }
 
 
-# =====================================
-# EXEMPLARS
-# =====================================
-# Key changes from v1:
-#
-# Deep Playmaker:
-#   Kimmich removed — too hybrid (high
-#   defensive + high attacking output),
-#   contaminated the centroid toward
-#   Ball Winner. Busquets + Kroos added
-#   as purer passing/vision archetypes.
-#
-# Creative Playmaker:
-#   Bernardo Silva removed — plays as
-#   hybrid winger/CM, pulled centroid
-#   toward Wide Winger. Odegaard added.
-#
-# Ball Winner:
-#   Declan Rice removed — post-Arsenal
-#   passing stats too high, bled centroid
-#   toward Deep Playmaker. Partey added
-#   for higher aggression/interception
-#   profile.
-#
-# Box-to-Box:
-#   Gundogan added to stabilise centroid
-#   across a balanced attribute profile.
-#
-# Wide Winger:
-#   Adama Traore added as a pace + crossing
-#   archetype to anchor the pace dimension.
-#
-# Creative Winger:
-#   Musiala added — high dribbling + vision,
-#   not pace-reliant.
-#
-# Inside Forward:
-#   Salah added — textbook inside forward
-#   profile: pace + finishing + dribbling.
-#
-# Poacher:
-#   Kane removed — drops deep too often,
-#   hybrid False 9 profile contaminates
-#   centroid. Gyokeres added as purer
-#   poacher.
-#
-# False 9:
-#   Benzema removed — data quality risk
-#   (retired / sparse recent data).
-#   Firmino + Lewandowski added.
-#
-# Ball Playing Defender:
-#   Ruben Dias added as third exemplar
-#   to stabilise centroid (two exemplars
-#   is fragile if one is also a test
-#   subject in evaluation).
-#
-# Defensive Defender:
-#   Koundé added as a pure defensive
-#   CB profile pre-positional evolution.
+
 
 ROLE_EXEMPLARS = {
 
@@ -325,16 +255,7 @@ ROLE_EXEMPLARS = {
     ],
 
     "Ball Winner": [
-        # v6: Rice and Ugarte added back as
-        # exemplars. They ARE the correct
-        # ground truth for this role. Having
-        # them absent while they're in the
-        # eval set means the centroid doesn't
-        # represent them — of course they fail.
-        # Caicedo and Tchouameni kept.
-        # Partey removed — he has higher
-        # Vision/Passing than the others,
-        # nudging the centroid toward Deep PM.
+
         "Caicedo",
         "Tchouameni",
         "Declan Rice",
@@ -342,19 +263,7 @@ ROLE_EXEMPLARS = {
     ],
 
     "Box-to-Box": [
-        # v6: Kante removed — his defensive
-        # stats are so elite he nudges the
-        # B2B centroid toward Ball Winner.
-        # Milinkovic-Savic added: textbook B2B,
-        # balanced across all six base attrs,
-        # no single elite dimension, which is
-        # exactly what the B2B centroid should
-        # look like. Bellingham added back —
-        # he IS Box-to-Box; the issue was
-        # Vision/Dribbling dragging the centroid
-        # toward CP, but with Milinkovic-Savic
-        # anchoring the physical dimension
-        # the centroid will stay balanced.
+
         "Valverde",
         "Gravenberch",
         "Milinkovic-Savic",
@@ -379,23 +288,7 @@ ROLE_EXEMPLARS = {
     ],
 
     "Poacher": [
-        # v6: Haaland added back as primary
-        # Poacher exemplar. The concern was
-        # his Strength bleeding toward Target
-        # Forward, but his Finishing and
-        # Positioning are the highest in the
-        # dataset — without him the centroid
-        # is defined by two players who may
-        # not even be found in the dataset,
-        # making the Poacher prototype the
-        # weakest and least reliable of all
-        # roles. The Strength penalty in
-        # get_role_scores() handles Target
-        # Forward separation. Lewandowski
-        # added back: he IS a poacher by
-        # attribute profile. Kane removed —
-        # his deep-dropping pattern makes his
-        # FIFA stats closer to False 9.
+
         "Haaland",
         "Lewandowski",
         "Gyokeres",
@@ -409,12 +302,7 @@ ROLE_EXEMPLARS = {
     ],
 
     "False 9": [
-        # Lewandowski removed — he appears in
-        # the Poacher eval set and his physical
-        # profile pulls this centroid toward
-        # Target Forward. Griezmann and Firmino
-        # are cleaner False 9 archetypes:
-        # high passing/vision, low strength.
+
         "Griezmann",
         "Firmino",
     ],
@@ -432,37 +320,12 @@ ROLE_EXEMPLARS = {
     ]
 }
 
-
-# =====================================
-# CONFUSION PENALTIES
-# =====================================
-# Applied post-scoring: when role A is
-# the current leader, role B's score is
-# multiplied by the penalty factor.
-#
-# Targets the most common confusable pairs
-# identified from evaluation failures.
-# Only activate this after Changes 1-3
-# are validated — it amplifies whatever
-# the boost logic decides, so it will
-# entrench errors if the base scoring
-# is still wrong.
-
 CONFUSION_PENALTIES = {
 
-    # --- Deep Playmaker cluster ---
     ("Deep Playmaker",        "Ball Winner"):        0.96,
     ("Deep Playmaker",        "Creative Playmaker"): 0.96,
     ("Deep Playmaker",        "Box-to-Box"):         0.94,
 
-    # v6: B2B → Deep Playmaker added.
-    # When B2B leads, penalise Deep Playmaker.
-    # Previously missing — this is why Kimmich
-    # and Rodri (predicted B2B) were not being
-    # pulled back to Deep Playmaker by the
-    # penalty system. The penalty only fires
-    # when Deep Playmaker leads, which it
-    # doesn't for these players.
     ("Box-to-Box",            "Deep Playmaker"):     0.95,
 
     # v6: B2B → Ball Winner added.
