@@ -188,10 +188,6 @@ def position_fit(
     return 0.50
 
 
-# =====================================
-# ROLE FIT
-# =====================================
-
 def role_compatibility(
     player1,
     player2
@@ -227,9 +223,6 @@ def role_compatibility(
 
     return 0.50
 
-# =====================================
-# STAT COMPLEMENTARITY
-# =====================================
 
 def stat_complementarity(
     player1,
@@ -352,10 +345,6 @@ def stat_complementarity(
     )
 
 
-# =====================================
-# MAIN SCORE
-# =====================================
-
 def compatibility_score(
     idx1,
     idx2
@@ -407,10 +396,6 @@ def compatibility_score(
     )
 
 
-# =====================================
-# FIND PLAYER
-# =====================================
-
 def find_player(
     player_name
 ):
@@ -441,10 +426,6 @@ def find_player(
 
     return None
 
-
-# =====================================
-# BEST PARTNERS
-# =====================================
 
 def best_partners(
     player_name,
@@ -542,10 +523,6 @@ def best_partners(
 
         )
 
-
-# =====================================
-# MAIN
-# =====================================
 
 if __name__ == "__main__":
 
