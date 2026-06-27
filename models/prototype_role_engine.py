@@ -328,45 +328,29 @@ CONFUSION_PENALTIES = {
 
     ("Box-to-Box",            "Deep Playmaker"):     0.95,
 
-    # v6: B2B → Ball Winner added.
-    # When B2B leads, penalise Ball Winner.
-    # Rice and Ugarte were predicted as B2B —
-    # without this direction, the confusion
-    # penalty system never intervenes.
+
     ("Box-to-Box",            "Ball Winner"):        0.95,
 
     ("Creative Playmaker",    "Deep Playmaker"):     0.96,
     ("Creative Playmaker",    "Box-to-Box"):         0.94,
 
-    # --- Defender cluster ---
+
     ("Ball Playing Defender", "Defensive Defender"): 0.88,
     ("Defensive Defender",    "Ball Playing Defender"): 0.92,
 
-    # --- Winger cluster ---
+
     ("Wide Winger",           "Creative Winger"):    0.95,
 
-    # --- Striker cluster ---
-    # v6: Target Forward → Poacher raised 0.95 → 0.91.
-    # Haaland and Lewandowski were predicted as
-    # Target Forward — the 0.95 penalty (5% cut)
-    # was not enough to overcome a gap of 0.10+
-    # in the raw scores. At 0.91, a Target Forward
-    # score of 1.25 becomes 1.14, making it
-    # competitive with a Poacher score of 1.15.
+
     ("Poacher",               "Target Forward"):     0.96,
     ("Target Forward",        "Poacher"):            0.91,
 
-    # v6: False 9 → Poacher added.
-    # Kane and Lautaro were predicted as False 9.
-    # When False 9 leads, reduce Poacher penalty
-    # so true Poachers can still surface.
+
     ("False 9",               "Poacher"):            0.93,
 }
 
 
-# =====================================
-# BUILD PROTOTYPES
-# =====================================
+
 
 def build_prototypes(verbose=False):
 
@@ -421,22 +405,16 @@ def build_prototypes(verbose=False):
     return prototypes
 
 
-# =====================================
-# GLOBAL PROTOTYPES
-# =====================================
+
 
 ROLE_PROTOTYPES = build_prototypes(
     verbose=False
 )
 
 
-# =====================================
-# ROLE SCORES
-# =====================================
 
 def get_role_scores(player):
 
-    # --- position normalisation ---
     position = normalize_position(
         player["Position"]
     )
@@ -469,71 +447,13 @@ def get_role_scores(player):
             prototype.reshape(1, -1)
         )[0][0]
 
-        # -------------------------
-        # ROLE-SPECIFIC BOOSTS
-        # -------------------------
-        # v6 changes vs v5:
-        #
-        # Deep Playmaker:
-        #   Passing² 0.20 → 0.25.
-        #   Vision² 0.15 → 0.18.
-        #   Interceptions penalty 0.08 → 0.04.
-        #   Rationale: Rodri removed from exemplars
-        #   so the circular penalty is no longer
-        #   needed at full strength. Raising the
-        #   Passing² reward creates a steeper curve
-        #   that separates Kimmich/Kroos (Passing
-        #   ~0.85) from B2B players (Passing ~0.65).
-        #
-        # Box-to-Box:
-        #   Defending² 0.14 → removed.
-        #   Physicality² 0.10 → 0.12.
-        #   Passing reward 0.06 kept.
-        #   Vision² penalty added at 0.10.
-        #   Rationale: Defending² was attracting
-        #   Rice and Ugarte (elite Defending) into
-        #   B2B. Vision² penalty creates a hard
-        #   curve away from Creative Playmaker
-        #   without hurting average-Vision B2B.
-        #
-        # Poacher:
-        #   Strength penalty removed.
-        #   Finishing² 0.25 → 0.30.
-        #   Positioning² added at 0.15 (if available).
-        #   Rationale: Strength penalty was directly
-        #   hurting Haaland. Separation from Target
-        #   Forward should come from Poacher having
-        #   MORE Finishing/Positioning, not less
-        #   Strength. Lewandowski is now an exemplar
-        #   so the centroid is more robust.
+       
 
         bonus = 0.0
 
         if role == "Deep Playmaker":
 
-            # v6: Interceptions penalty reduced
-            # 0.08 → 0.04. The prototype is now
-            # Busquets/Pirlo/Xabi Alonso — pure
-            # passers with LOW Interceptions.
-            # The penalty was introduced to
-            # separate Rodri (who was an exemplar)
-            # from himself, which was circular.
-            # With Rodri removed from exemplars,
-            # the centroid naturally has low
-            # Interceptions — the penalty is now
-            # a mild discriminator only.
-            #
-            # Passing² raised 0.20 → 0.25.
-            # Vision² raised 0.15 → 0.18.
-            # These are the two attributes where
-            # Kimmich, Kroos, and Modric separate
-            # cleanly from all B2B players.
-            # B2B players (Valverde, Gravenberch)
-            # have Passing ~0.65 while Deep PMs
-            # (Kimmich, Kroos) are ~0.85+.
-            # At 0.25: 0.85² × 0.25 = 0.180
-            #          0.65² × 0.25 = 0.106
-            # That 0.074 gap is the separator.
+
             bonus += player["Passing"]        ** 2 * 0.26
             bonus += player["Vision"]         ** 2 * 0.18
             bonus += player["Ball Control"]         * 0.08
@@ -544,20 +464,14 @@ def get_role_scores(player):
 
         elif role == "Creative Playmaker":
 
-            # Dribbling is the primary separator
-            # from Deep Playmaker — both share
-            # Passing and Vision, but only
-            # Creative PMs rely on Dribbling.
+
             bonus += player["Dribbling"] ** 2 * 0.15
             bonus += player["Vision"]    ** 2 * 0.12
             bonus += player["Passing"]         * 0.06
 
         elif role == "Ball Winner":
 
-            # Defensive attrs dominate.
-            # Vision penalised harder than v2 —
-            # a high-Vision player belongs in
-            # Deep Playmaker, not here.
+      
             bonus += player["Defending"]     ** 2 * 0.18
             bonus += player["Interceptions"] ** 2 * 0.15
             bonus += player["Aggression"]    ** 2 * 0.12
@@ -579,14 +493,12 @@ def get_role_scores(player):
 
         elif role == "Wide Winger":
 
-            # Pure pace + crossing profile.
             bonus += player["Pace"]     ** 2 * 0.18
             bonus += player["Crossing"] ** 2 * 0.12
             bonus -= player["Vision"]         * 0.04
 
         elif role == "Creative Winger":
 
-            # Technical, not pace-reliant.
             bonus += player["Dribbling"] ** 2 * 0.15
             bonus += player["Vision"]    ** 2 * 0.12
             bonus -= player["Pace"]            * 0.04
@@ -599,31 +511,7 @@ def get_role_scores(player):
 
         elif role == "Poacher":
 
-            # v6: Strength penalty removed.
-            # Haaland has elite Strength but
-            # IS a Poacher — penalising Strength
-            # directly hurts the player we're
-            # trying to classify correctly.
-            # The separation from Target Forward
-            # should come from what Poachers
-            # have MORE of: elite Finishing and
-            # Positioning, NOT less Strength.
-            #
-            # Finishing² raised 0.25 → 0.30.
-            # Positioning² added at 0.15.
-            # These two together create a very
-            # steep reward curve for pure
-            # goal-scorers — at Finishing=0.90:
-            # 0.90² × 0.30 = 0.243
-            # A Target Forward with Finishing=0.75
-            # only gets: 0.75² × 0.30 = 0.169
-            # That 0.074 gap is the separator.
-            #
-            # Passing and Vision penalties kept:
-            # Poachers don't create, they finish.
-            # This separates from False 9 who
-            # share Finishing but have high
-            # Vision/Passing (Kane, Lewandowski).
+            
             pos_attr = "Positioning"
             has_positioning = (
                 pos_attr in player.index
@@ -642,19 +530,14 @@ def get_role_scores(player):
 
         elif role == "Target Forward":
 
-            # Strength and Physicality dominate.
-            # Pace penalised to separate from
-            # Inside Forward.
+
             bonus += player["Strength"]    ** 2 * 0.18
             bonus += player["Physicality"] ** 2 * 0.12
             bonus -= player["Pace"]              * 0.05
 
         elif role == "False 9":
 
-            # Link-up play profile —
-            # Passing and Vision squared,
-            # Strength penalised to separate
-            # from Target Forward.
+ 
             bonus += player["Passing"]   ** 2 * 0.12
             bonus += player["Vision"]    ** 2 * 0.12
             bonus += player["Dribbling"]       * 0.08
@@ -662,22 +545,7 @@ def get_role_scores(player):
 
         elif role == "Ball Playing Defender":
 
-            # Hard Passing floor: below 0.55
-            # normalized, a player cannot be
-            # a Ball Playing Defender regardless
-            # of cosine similarity.
-            #
-            # v4: Passing² raised 0.30 → 0.38,
-            # Vision raised 0.15 → 0.18.
-            # Van Dijk, Saliba, Dias all clear
-            # the 0.55 floor but the DD cosine
-            # advantage (gap ~0.15) was still
-            # winning. At Passing ~0.72:
-            #   old: 0.72² × 0.30 = 0.155
-            #   new: 0.72² × 0.38 = 0.197
-            # Combined with the DD Passing
-            # penalty increase below, this
-            # should flip the remaining three.
+           
 
             passing_val = float(player["Passing"])
 
@@ -692,34 +560,13 @@ def get_role_scores(player):
 
         elif role == "Defensive Defender":
 
-            # Pure defensive profile.
-            # v4: Passing penalty raised
-            # 0.16 → 0.22. The remaining
-            # BPD failures (Van Dijk, Saliba,
-            # Dias) all have DD scores ~1.28+
-            # driven by elite Defending cosine
-            # similarity. The Passing penalty
-            # is the only lever that reduces
-            # DD's score for good-passing CBs
-            # without affecting true DDs
-            # (Romero, Milenkovic) who have
-            # below-average Passing anyway.
+            
             bonus += player["Defending"]       ** 2 * 0.18
             bonus += player["Standing Tackle"] ** 2 * 0.14
             bonus += player["Strength"]        ** 2 * 0.10
             bonus -= player["Passing"]               * 0.22
 
         scores[role] = float(similarity + bonus)
-
-    # -------------------------
-    # CONFUSION PENALTY PASS
-    # -------------------------
-    # When the current leader is one half
-    # of a known confusable pair, apply a
-    # small penalty to the runner-up.
-    # This runs after all role scores are
-    # set so it never affects the leader's
-    # own score.
 
     if scores:
 
@@ -737,9 +584,6 @@ def get_role_scores(player):
     return scores
 
 
-# =====================================
-# PRIMARY ROLE
-# =====================================
 
 def get_primary_role(player):
 
@@ -774,10 +618,6 @@ def get_primary_role(player):
     return best_role
 
 
-# =====================================
-# FIND PLAYER
-# =====================================
-
 def find_player(player_name):
 
     exact = df[
@@ -802,10 +642,6 @@ def find_player(player_name):
 
     return None
 
-
-# =====================================
-# DIAGNOSTICS
-# =====================================
 
 def diagnose_prototype_separation(
     roles_to_compare=None
@@ -885,10 +721,6 @@ def audit_exemplar_found_count():
     """
     build_prototypes(verbose=True)
 
-
-# =====================================
-# TESTER
-# =====================================
 
 if __name__ == "__main__":
 
