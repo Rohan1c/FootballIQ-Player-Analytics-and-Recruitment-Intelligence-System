@@ -198,10 +198,6 @@ def candidate_score(
     )
 
 
-# =====================================
-# PICK PLAYER
-# =====================================
-
 def pick_best_player(
 
     anchor_idx,
@@ -246,9 +242,6 @@ def pick_best_player(
 
     return best_idx
 
-# =====================================
-# BUILD XI
-# =====================================
 
 def build_xi(anchor_idx):
 
@@ -266,9 +259,6 @@ def build_xi(anchor_idx):
         anchor_player["Position"]
     )
 
-    # -------------------------
-    # MIDFIELD
-    # -------------------------
 
     if anchor_position == "CDM":
 
@@ -351,9 +341,6 @@ def build_xi(anchor_idx):
         xi["CM1"] = cm1
         xi["CM2"] = cm2
 
-    # -------------------------
-    # DEFENCE
-    # -------------------------
 
     gk = pick_best_player(
         anchor_idx,
@@ -401,10 +388,6 @@ def build_xi(anchor_idx):
     xi["CB2"] = cb2
     xi["LB"] = lb
 
-    # -------------------------
-    # ATTACK
-    # -------------------------
-
     rw = pick_best_player(
         anchor_idx,
         "RW",
@@ -435,10 +418,6 @@ def build_xi(anchor_idx):
 
     return xi
 
-
-# =====================================
-# PRINT XI
-# =====================================
 
 def print_xi(xi):
 
@@ -492,10 +471,6 @@ def print_xi(xi):
 
         )
 
-
-# =====================================
-# MAIN
-# =====================================
 
 if __name__ == "__main__":
 
