@@ -9,9 +9,7 @@ from models.prototype_role_engine import (
     get_primary_role
 )
 
-# =====================================
-# FIND PLAYER
-# =====================================
+
 
 def find_player(player_name):
 
@@ -38,9 +36,7 @@ def find_player(player_name):
     return None
 
 
-# =====================================
-# MIDFIELD ROLES
-# =====================================
+
 
 MIDFIELD_ROLES = [
 
@@ -55,9 +51,7 @@ MIDFIELD_ROLES = [
 ]
 
 
-# =====================================
-# MIDFIELD TEMPLATES
-# =====================================
+
 
 MIDFIELD_TEMPLATES = {
 
@@ -96,9 +90,7 @@ MIDFIELD_TEMPLATES = {
 }
 
 
-# =====================================
-# GET MIDFIELDERS
-# =====================================
+
 
 def get_midfield_players():
 
@@ -123,9 +115,7 @@ def get_midfield_players():
     return players
 
 
-# =====================================
-# GET PLAYERS BY ROLE
-# =====================================
+
 
 def get_players_by_role(role):
 
@@ -146,9 +136,7 @@ def get_players_by_role(role):
     return players
 
 
-# =====================================
-# PAIR CHEMISTRY
-# =====================================
+
 
 def pair_score(
     idx1,
@@ -161,9 +149,7 @@ def pair_score(
     )
 
 
-# =====================================
-# ROLE FIT
-# =====================================
+
 
 def role_fit(
     anchor_role,
@@ -187,10 +173,6 @@ def role_fit(
     return 0
 
 
-# =====================================
-# TRIO CHEMISTRY
-# =====================================
-
 def trio_chemistry(
     a,
     b,
@@ -212,9 +194,6 @@ def trio_chemistry(
     ) / 3
 
 
-# =====================================
-# TACTICAL BALANCE
-# =====================================
 
 def tactical_balance(
     anchor_idx,
@@ -271,9 +250,6 @@ def tactical_balance(
     )
 
 
-# =====================================
-# BUILD CANDIDATE POOLS
-# =====================================
 
 def build_candidate_pools(
     anchor_idx
@@ -327,9 +303,6 @@ def build_candidate_pools(
 
     return candidate_pools
 
-# =====================================
-# MIDFIELD QUALITY BONUS
-# =====================================
 
 def midfield_quality_bonus(
     idx
@@ -422,11 +395,6 @@ def midfield_quality_bonus(
         ) / 400
 
     return 0
-
-
-# =====================================
-# FIND BEST TRIO
-# =====================================
 
 def best_trio(
     anchor_idx
@@ -561,9 +529,6 @@ def best_trio(
     )
 
 
-# =====================================
-# PRINT TRIO
-# =====================================
 
 def print_trio(
     trio,
@@ -604,11 +569,6 @@ def print_trio(
         f"\nTactical Score: "
         f"{score:.3f}"
     )
-
-
-# =====================================
-# MAIN
-# =====================================
 
 if __name__ == "__main__":
 
