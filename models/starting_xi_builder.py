@@ -10,9 +10,6 @@ from models.prototype_role_engine import (
     get_role_scores
 )
 
-# =====================================
-# POSITION MAP
-# =====================================
 
 POSITION_MAP = {
 
@@ -47,10 +44,6 @@ POSITION_MAP = {
 }
 
 
-# =====================================
-# FIND PLAYER
-# =====================================
-
 def find_player(player_name):
 
     exact = df[
@@ -76,9 +69,6 @@ def find_player(player_name):
     return None
 
 
-# =====================================
-# POSITION FILTER
-# =====================================
 
 def get_players_for_position(
     tactical_position
@@ -103,9 +93,6 @@ def get_players_for_position(
     return candidates
 
 
-# =====================================
-# ROLE BONUS
-# =====================================
 
 def role_bonus(
     player_idx,
@@ -173,10 +160,6 @@ def role_bonus(
 
     return 0
 
-
-# =====================================
-# PLAYER SCORE
-# =====================================
 
 def candidate_score(
 
