@@ -167,10 +167,6 @@ def age_score(
     return score
 
 
-# =====================================
-# REPLACEMENT SCORE
-# =====================================
-
 def replacement_score(
     target_idx,
     candidate_idx
@@ -244,10 +240,6 @@ def replacement_score(
 
     return final_score
 
-
-# =====================================
-# FIND REPLACEMENTS
-# =====================================
 
 def find_replacements(
 
@@ -370,10 +362,6 @@ def find_replacements(
 
         )
 
-
-# =====================================
-# MAIN
-# =====================================
 
 if __name__ == "__main__":
 
