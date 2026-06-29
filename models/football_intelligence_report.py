@@ -24,10 +24,6 @@ from models.starting_xi_builder import (
     build_xi
 )
 
-# =====================================
-# TOP ATTRIBUTES
-# =====================================
-
 ATTRIBUTE_COLUMNS = [
 
     "Pace",
@@ -94,10 +90,6 @@ def top_attributes(
     return scores[:top_n]
 
 
-# =====================================
-# BEST PARTNERS
-# =====================================
-
 def get_best_partners(
 
     player_idx,
@@ -144,9 +136,6 @@ def get_best_partners(
     return scores[:top_n]
 
 
-# =====================================
-# BEST REPLACEMENTS
-# =====================================
 
 def get_best_replacements(
 
@@ -193,10 +182,6 @@ def get_best_replacements(
 
     return scores[:top_n]
 
-
-# =====================================
-# REPORT
-# =====================================
 
 def generate_report(
 
@@ -294,9 +279,6 @@ def generate_report(
             f"{value:.2f}"
 
         )
-        # =====================================
-    # BEST PARTNERS
-    # =====================================
 
     partners = get_best_partners(
         player_idx,
@@ -329,10 +311,6 @@ def generate_report(
 
         )
 
-    # =====================================
-    # BEST REPLACEMENTS
-    # =====================================
-
     replacements = get_best_replacements(
         player_idx,
         top_n=5
@@ -364,9 +342,6 @@ def generate_report(
 
         )
 
-    # =====================================
-    # BEST MIDFIELD TRIO
-    # =====================================
 
     print("\n")
     print("=" * 80)
@@ -404,9 +379,7 @@ def generate_report(
             "No midfield trio available."
         )
 
-    # =====================================
-    # RECOMMENDED XI
-    # =====================================
+
 
     print("\n")
     print("=" * 80)
@@ -453,10 +426,6 @@ def generate_report(
             f"{get_primary_role(xi_player)}"
 
         )
-
-    # =====================================
-    # PLAYER SUMMARY
-    # =====================================
 
     print("\n")
     print("=" * 80)
@@ -548,10 +517,6 @@ def generate_report(
     print("END OF REPORT")
     print("=" * 80)
 
-
-# =====================================
-# MAIN
-# =====================================
 
 if __name__ == "__main__":
 
