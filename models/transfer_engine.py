@@ -11,10 +11,6 @@ from models.prototype_role_engine import (
     get_primary_role
 )
 
-# =====================================
-# LOAD EMBEDDINGS
-# =====================================
-
 embeddings = np.load(
     "models/latent_embeddings.npy"
 )
@@ -32,9 +28,6 @@ similarity_matrix = (
     distance_matrix / max_dist
 )
 
-# =====================================
-# FIND PLAYER
-# =====================================
 
 def find_player(player_name):
 
@@ -60,10 +53,6 @@ def find_player(player_name):
 
     return None
 
-
-# =====================================
-# ROLE MATCH
-# =====================================
 
 def role_match(
     role_a,
@@ -124,10 +113,6 @@ def role_match(
     return 0.25
 
 
-# =====================================
-# POSITION MATCH
-# =====================================
-
 def position_match(
     pos_a,
     pos_b
@@ -150,10 +135,6 @@ def position_match(
 
     return 0.20
 
-
-# =====================================
-# AGE SCORE
-# =====================================
 
 def age_score(
     target_age,
