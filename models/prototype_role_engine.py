@@ -601,7 +601,6 @@ def get_primary_role(player):
     best_role  = sorted_scores[0][0]
     best_score = sorted_scores[0][1]
 
-    # only one role available
     if len(sorted_scores) == 1:
         return best_role
 
@@ -609,9 +608,6 @@ def get_primary_role(player):
 
     confidence_gap = best_score - second_score
 
-    # if roles are extremely close,
-    # still return best role,
-    # but avoid a hard threshold
     if confidence_gap < 0.01:
         return best_role
 
@@ -724,8 +720,6 @@ def audit_exemplar_found_count():
 
 if __name__ == "__main__":
 
-    # Run diagnostics first so you can see
-    # prototype health before querying players
     audit_exemplar_found_count()
 
     diagnose_prototype_separation([
