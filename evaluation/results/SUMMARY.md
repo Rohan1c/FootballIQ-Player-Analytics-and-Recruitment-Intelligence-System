@@ -122,6 +122,16 @@ Five-fold: players are held out of training, embedded from one view only, and co
 | logistic regression (C=0.1) + original gate | 211 | 10x repeated 5-fold CV | 0.736 | 0.019 |
 | logistic regression, no gate | 211 | 10x repeated 5-fold CV | 0.737 | 0.016 |
 | nearest prototype + gate | 211 | 10x repeated 5-fold CV | 0.771 | 0.012 |
+| experiment: + earlier rich-data seasons where available | 211 | 10x repeated 5-fold CV | 0.789 | 0.013 |
+
+The last row is an experiment: for players who also appear in the 2017-22 corpus, the classifier additionally sees the rich statistics of their latest corpus season.
+
+| classifier | labelled_players | n | accuracy | sd_over_repeats |
+|---|---|---|---|---|
+| logistic regression (C=0.1) + gate | with history | 153 | 0.759 | 0.024 |
+| logistic regression (C=0.1) + gate | without history | 58 | 0.826 | 0.020 |
+| experiment: + earlier rich-data seasons where available | with history | 153 | 0.775 | 0.016 |
+| experiment: + earlier rich-data seasons where available | without history | 58 | 0.826 | 0.020 |
 
 | gate | labelled_players | true_role_allowed |
 |---|---|---|
@@ -166,7 +176,88 @@ Five-fold: players are held out of training, embedded from one view only, and co
 
 | operation | original_seconds | new_seconds | speed_up |
 |---|---|---|---|
-| start-up (load data, build matrices) | 1.3123 | 1.3105 | 1.0014 |
-| similar players | 0.0446 | 0.0027 | 16.4176 |
-| best partners | 11.9788 | 0.0002 | 79405.7264 |
-| replacements | 11.2441 | 0.0027 | 4123.9837 |
+| start-up (load data, build matrices) | 1.3275 | 1.1659 | 1.1386 |
+| similar players | 0.0493 | 0.0014 | 34.8556 |
+| best partners | 10.0841 | 0.0001 | 94906.5767 |
+| replacements | 10.3206 | 0.0017 | 6201.9296 |
+
+## 7. Multi-season corpus (big five leagues, 2017-18 to 2021-22)
+
+Sections 1 to 6 use the 2025-26 season, where FBref only publishes basic statistics. This section uses five earlier seasons that also have passing, carrying, pressing and shot-creation data. Models are fitted on 60% of the players and scored on a different 25%; figures are means over five such splits.
+
+| item | value |
+|---|---|
+| player-seasons in the corpus | 13229 |
+| players in the corpus | 5309 |
+| qualified outfield player-seasons (900+ minutes) | 7491 |
+| qualified outfield players | 3006 |
+| consecutive-season pairs | 4070 |
+| consecutive-season pairs with a change of club | 829 |
+| rich features | 83 |
+| thin features (what the 2025-26 FBref file still allows) | 13 |
+
+### 7.1 Representations on held-out players
+
+`reid_*`: a player-season is the query and the gallery is every qualified player-season of the following year (about 1,500). Top-1 means the player's own next season is the single nearest. Purity and probe use Transfermarkt positions; a player's own other seasons never count as neighbours.
+
+| representation | dim | reid_top1 | reid_top10 | reid_mrr | position_purity@10 | family_purity@10 | family_probe_F1 | minutes_R2 | same_club@10 |
+|---|---|---|---|---|---|---|---|---|---|
+| thin statistics (13), standardised | 13 | 0.060 | 0.254 | 0.127 | 0.527 | 0.635 | 0.670 | 0.031 | 0.003 |
+| thin statistics + identity metric | 13 | 0.066 | 0.293 | 0.142 | 0.538 | 0.648 | 0.675 | 0.033 | 0.003 |
+| rich statistics (83), standardised | 83 | 0.454 | 0.767 | 0.559 | 0.598 | 0.718 | 0.750 | 0.098 | 0.009 |
+| rich + PCA-32 | 32 | 0.414 | 0.746 | 0.525 | 0.597 | 0.717 | 0.749 | 0.054 | 0.008 |
+| rich + autoencoder-32 | 32 | 0.422 | 0.757 | 0.536 | 0.593 | 0.713 | 0.754 | 0.056 | 0.009 |
+| rich + masked autoencoder-32 | 32 | 0.413 | 0.755 | 0.526 | 0.586 | 0.705 | 0.757 | 0.058 | 0.009 |
+| rich + identity metric, linear (LDA-32) | 32 | 0.568 | 0.855 | 0.666 | 0.592 | 0.714 | 0.754 | 0.065 | 0.008 |
+| rich + contrastive encoder, linear (32) | 32 | 0.557 | 0.859 | 0.661 | 0.564 | 0.681 | 0.753 | 0.061 | 0.007 |
+| rich + contrastive encoder, 1 hidden layer (32) | 32 | 0.465 | 0.796 | 0.576 | 0.562 | 0.675 | 0.741 | 0.056 | 0.006 |
+| rich + contrastive encoder, 2 hidden layers (32) | 32 | 0.410 | 0.754 | 0.527 | 0.562 | 0.675 | 0.732 | 0.053 | 0.006 |
+
+Standard deviation over the five splits:
+
+| representation | reid_top1_sd | reid_top10_sd | family_purity@10_sd |
+|---|---|---|---|
+| thin statistics (13), standardised | 0.003 | 0.015 | 0.021 |
+| thin statistics + identity metric | 0.004 | 0.017 | 0.022 |
+| rich statistics (83), standardised | 0.007 | 0.011 | 0.019 |
+| rich + PCA-32 | 0.013 | 0.006 | 0.018 |
+| rich + autoencoder-32 | 0.008 | 0.008 | 0.017 |
+| rich + masked autoencoder-32 | 0.018 | 0.007 | 0.020 |
+| rich + identity metric, linear (LDA-32) | 0.017 | 0.006 | 0.015 |
+| rich + contrastive encoder, linear (32) | 0.017 | 0.008 | 0.017 |
+| rich + contrastive encoder, 1 hidden layer (32) | 0.016 | 0.014 | 0.015 |
+| rich + contrastive encoder, 2 hidden layers (32) | 0.027 | 0.017 | 0.015 |
+
+### 7.2 Re-identification for players who stayed and players who changed club
+
+| representation | group | queries | reid_top1 | reid_top10 |
+|---|---|---|---|---|
+| thin statistics (13), standardised | stayed at the same club | 822.400 | 0.066 | 0.268 |
+| thin statistics (13), standardised | changed club | 205.800 | 0.033 | 0.200 |
+| rich statistics (83), standardised | stayed at the same club | 822.400 | 0.511 | 0.815 |
+| rich statistics (83), standardised | changed club | 205.800 | 0.224 | 0.573 |
+| rich + identity metric, linear (LDA-32) | stayed at the same club | 822.400 | 0.632 | 0.895 |
+| rich + identity metric, linear (LDA-32) | changed club | 205.800 | 0.313 | 0.695 |
+
+### 7.3 Role classification from statistics alone
+
+Labelled players are matched to their latest qualified corpus season. The labels describe 2025-26, so this is an approximation; the two feature sets are compared on identical players and folds.
+
+| features | position_gate | labelled_players | accuracy | sd_over_repeats |
+|---|---|---|---|---|
+| thin statistics (13) | True | 153 | 0.527 | 0.016 |
+| thin statistics (13) | False | 153 | 0.453 | 0.019 |
+| rich statistics (83) | True | 153 | 0.641 | 0.025 |
+| rich statistics (83) | False | 153 | 0.621 | 0.028 |
+| random choice within the position gate | True | 153 | 0.346 | 0.000 |
+
+### 7.4 Real transfers
+
+For a club that both sold and bought a player in the same position group in one summer: how does the signing rank, by similarity to the departed player, among everything other clubs bought in that position group that summer? 0.5 would mean no relation.
+
+| representation | club_summers | signing_departure_pairs | mean_percentile | ci_low | ci_high | share_in_closest_quarter |
+|---|---|---|---|---|---|---|
+| thin statistics (13), standardised | 236 | 489 | 0.460 | 0.429 | 0.491 | 0.288 |
+| rich statistics (83), standardised | 236 | 489 | 0.451 | 0.421 | 0.481 | 0.294 |
+| rich + PCA-32 | 236 | 489 | 0.450 | 0.421 | 0.479 | 0.292 |
+| rich + identity metric, linear (LDA-32) | 236 | 489 | 0.460 | 0.430 | 0.491 | 0.301 |

@@ -1,7 +1,7 @@
 # Evaluation
 
 ```bash
-python -m evaluation.run_all        # about 4 minutes on a laptop CPU; writes results/SUMMARY.md
+python -m evaluation.run_all        # about 10 minutes on a laptop CPU; writes results/SUMMARY.md
 python -m unittest discover -s tests
 ```
 
@@ -10,6 +10,7 @@ python -m unittest discover -s tests
 | `benchmark_embeddings.py` | data linkage, representation quality, missing-view robustness, re-identification across club spells |
 | `benchmark_roles.py` | role classification: the original engine re-examined, held-out comparison, cross-validation |
 | `benchmark_speed.py` | query latency, original engines vs current |
+| `benchmark_corpus.py` | multi-season corpus: held-out re-identification, thin vs rich data, identity metrics, roles, real transfers |
 | `labelling.py` | builds a sheet for two human annotators and scores their agreement |
 
 ## Role labels and where they come from

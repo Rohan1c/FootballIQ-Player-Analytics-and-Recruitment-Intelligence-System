@@ -9,6 +9,8 @@ Three questions, three tables under ``evaluation/results/``:
                              hand-tuned weights compare with the original engine?
   roles_cross_validation.csv With every available label, what accuracy does
                              cross-validation give, and how does it grow with labels?
+  roles_career_history.csv   Does adding a player's earlier seasons (which have passing and
+                             pressing data) help, for the players who have such seasons?
 
 Label sets (see evaluation/README.md):
   own    evaluation/role_labels.csv                   - the project's own 58 outfield labels
@@ -36,9 +38,9 @@ from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from sklearn.model_selection import StratifiedKFold
 
 from evaluation import common, metrics
-from footballiq import config
+from footballiq import config, corpus
 from footballiq.roles import (ORIGINAL_POSITION_ROLE_MAP, POSITION_ROLE_MAP, REGULARISATION,
-                              RoleClassifier, apply_gate)
+                              CareerAwareRoleClassifier, RoleClassifier, apply_gate)
 
 warnings.filterwarnings("ignore")
 C_GRID = [0.03, 0.1, 0.3, 1.0]
@@ -164,38 +166,52 @@ def _select_c(X, y, positions, seed: int) -> float:
     return best_c
 
 
-def cross_validated(X, y, positions, repeats: int = 10) -> tuple[pd.DataFrame, np.ndarray]:
+CAREER = "experiment: + earlier rich-data seasons where available"
+
+
+def cross_validated(X, y, positions, H, has_history, repeats: int = 10):
     counts = pd.Series(y).value_counts()
     strata = np.where(pd.Series(y).map(counts).to_numpy() < 5, "rare", y)
+    fixed_name = f"logistic regression (C={REGULARISATION}) + gate"
     scores = {"logistic regression (C chosen by inner CV) + gate": [],
-              f"logistic regression (C={REGULARISATION}) + gate": [],
+              fixed_name: [],
               f"logistic regression (C={REGULARISATION}) + original gate": [],
-              "logistic regression, no gate": [], "nearest prototype + gate": []}
+              "logistic regression, no gate": [], "nearest prototype + gate": [], CAREER: []}
+    subset = {(name, group): [] for name in (fixed_name, CAREER) for group in ("with history", "without history")}
     for rep in range(repeats):
-        fold_hits = {k: [] for k in scores}
+        fold_hits = {k: np.zeros(len(y), dtype=bool) for k in scores}
         for tr, te in StratifiedKFold(5, shuffle=True, random_state=rep).split(X, strata):
             c = _select_c(X[tr], y[tr], positions[tr], seed=rep)
             nested = RoleClassifier(C=c).fit(X[tr], y[tr]).predict(X[te], positions[te])
             fixed = RoleClassifier().fit(X[tr], y[tr])
             proto = NearestPrototype().fit(X[tr], y[tr]).predict(X[te], positions[te])
-            fold_hits["logistic regression (C chosen by inner CV) + gate"].extend(nested == y[te])
-            fold_hits[f"logistic regression (C={REGULARISATION}) + gate"].extend(fixed.predict(X[te], positions[te]) == y[te])
             original_gate = RoleClassifier(gate=ORIGINAL_POSITION_ROLE_MAP).fit(X[tr], y[tr])
-            fold_hits[f"logistic regression (C={REGULARISATION}) + original gate"].extend(
-                original_gate.predict(X[te], positions[te]) == y[te])
-            fold_hits["logistic regression, no gate"].extend(fixed.predict(X[te]) == y[te])
-            fold_hits["nearest prototype + gate"].extend(proto == y[te])
+            career = CareerAwareRoleClassifier().fit(X[tr], H[tr], has_history[tr], y[tr])
+            fold_hits["logistic regression (C chosen by inner CV) + gate"][te] = nested == y[te]
+            fold_hits[fixed_name][te] = fixed.predict(X[te], positions[te]) == y[te]
+            fold_hits[f"logistic regression (C={REGULARISATION}) + original gate"][te] = \
+                original_gate.predict(X[te], positions[te]) == y[te]
+            fold_hits["logistic regression, no gate"][te] = fixed.predict(X[te]) == y[te]
+            fold_hits["nearest prototype + gate"][te] = proto == y[te]
+            fold_hits[CAREER][te] = career.predict(X[te], H[te], has_history[te], positions[te]) == y[te]
         for k in scores:
-            scores[k].append(np.mean(fold_hits[k]))
+            scores[k].append(fold_hits[k].mean())
+        for name in (fixed_name, CAREER):
+            subset[(name, "with history")].append(fold_hits[name][has_history].mean())
+            subset[(name, "without history")].append(fold_hits[name][~has_history].mean())
     table = pd.DataFrame([{"classifier": k, "labels": len(y), "protocol": f"{repeats}x repeated 5-fold CV",
                            "accuracy": float(np.mean(v)), "sd_over_repeats": float(np.std(v))}
                           for k, v in scores.items()])
+    by_history = pd.DataFrame([{"classifier": name, "labelled_players": group,
+                                "n": int(has_history.sum() if group == "with history" else (~has_history).sum()),
+                                "accuracy": float(np.mean(v)), "sd_over_repeats": float(np.std(v))}
+                               for (name, group), v in subset.items()])
     # leave-one-out predictions of the shipped configuration: one prediction per player
     loo = np.empty(len(y), dtype=object)
     for i in range(len(y)):
         keep = np.arange(len(y)) != i
         loo[i] = RoleClassifier().fit(X[keep], y[keep]).predict(X[[i]], positions[[i]])[0]
-    return table, loo
+    return table, by_history, loo
 
 
 def learning_curve(X, y, positions, sizes=(30, 58, 90, 120, 150, 180), repeats: int = 200) -> pd.DataFrame:
@@ -220,9 +236,11 @@ def learning_curve(X, y, positions, sizes=(30, 58, 90, 120, 150, 180), repeats: 
 
 def main() -> None:
     common.RESULTS.mkdir(parents=True, exist_ok=True)
-    _, views, outfield = common.load_new()
+    players, views, outfield = common.load_new()
     X = views.combined
     positions = outfield["Position"].to_numpy(object)
+    has_history, H = corpus.career_features(players)
+    has_history, H = has_history[views.index], H[views.index]
     own_rows, own_roles, _ = common.role_labels(outfield, include_draft=False)
     all_rows, all_roles, source = common.role_labels(outfield, include_draft=True)
     draft = pd.read_csv(config.ROLE_LABELS_DRAFT)
@@ -249,7 +267,9 @@ def main() -> None:
     ])
 
     # ---- 3. all labels, cross-validation
-    cv, loo = cross_validated(X[all_rows], all_roles, positions[all_rows])
+    cv, by_history, loo = cross_validated(X[all_rows], all_roles, positions[all_rows],
+                                         H[all_rows], has_history[all_rows])
+    by_history.to_csv(common.RESULTS / "roles_career_history.csv", index=False)
     loo_correct = loo == all_roles
     cv.to_csv(common.RESULTS / "roles_cross_validation.csv", index=False)
     heldout = pd.concat([heldout, pd.DataFrame([
@@ -305,7 +325,7 @@ def main() -> None:
     plt.close()
 
     for title, frame in [("original engine: reported vs honest", original), ("held-out players", heldout),
-                         ("cross-validation, all labels", cv), ("gate", reach), ("McNemar", mcnemar),
+                         ("cross-validation, all labels", cv), ("by career history", by_history), ("gate", reach), ("McNemar", mcnemar),
                          ("learning curve", curve), ("per role", per_role)]:
         print(f"\n== {title} ==")
         print(frame.round(3).to_string(index=False))
