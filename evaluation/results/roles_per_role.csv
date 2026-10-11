@@ -1,0 +1,13 @@
+role,n,accuracy_leave_one_out
+Ball Playing Defender,29,0.896551724137931
+Ball Winner,18,0.7222222222222222
+Box-to-Box,26,0.8076923076923077
+Creative Playmaker,18,0.6111111111111112
+Creative Winger,9,0.5555555555555556
+Deep Playmaker,21,0.8095238095238095
+Defensive Defender,27,0.8888888888888888
+False 9,4,0.0
+Inside Forward,20,0.8
+Poacher,11,0.9090909090909091
+Target Forward,10,1.0
+Wide Winger,18,0.7777777777777778

@@ -1,0 +1,7 @@
+evaluation,n,accuracy,ci_low,ci_high,note
+as reported: all validation players,46,0.8043478260869565,0.6739130434782609,0.9130434782608695,in-sample; includes exemplars and goalkeepers
+validation players that are prototype exemplars,12,0.9166666666666666,0.75,1.0,leak: test players define the prototypes
+validation goalkeepers,5,1.0,1.0,1.0,correct by rule
+"validation, excluding exemplars and goalkeepers",29,0.7241379310344828,0.5517241379310345,0.8620689655172413,still in-sample: weights were hand-tuned on this list
+random choice among the roles the position gate allows,41,0.34349593495934955,0.3130081300813008,0.37398373983739835,chance level
+held-out draft labels (never used for tuning),153,0.6274509803921569,0.5490196078431373,0.6995098039215663,out-of-sample; labels unverified

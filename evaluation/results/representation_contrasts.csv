@@ -1,0 +1,3 @@
+contrast,metric,difference,ci_low,ci_high,n_players
+new: PCA-16 minus original embedding,family_purity@10,0.09727564102564101,0.0858974358974359,0.10889423076923077,1248
+new: masked multi-view autoencoder-16 minus original embedding,family_purity@10,0.06738782051282052,0.05560897435897436,0.0794871794871795,1248

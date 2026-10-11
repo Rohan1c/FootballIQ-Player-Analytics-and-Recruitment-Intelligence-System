@@ -1,0 +1,7 @@
+evaluation,n,accuracy,ci_low,ci_high,trained_on
+random choice within the original position gate,153,0.3420479302832244,0.3208061002178649,0.3622004357298475,-
+original rule engine (as shipped),153,0.6274509803921569,0.5490196078431373,0.6995098039215663,hand-tuned on the validation list
+"original rule engine, exemplars fixed",153,0.6405228758169934,0.5620915032679739,0.7124183006535948,hand-tuned on the validation list
+nearest prototype + gate (no hand-tuned weights),153,0.6601307189542484,0.5816993464052288,0.7320261437908496,58 own labels
+logistic regression + gate (no hand-tuned weights),153,0.6209150326797386,0.5424836601307189,0.6993464052287581,58 own labels
+"logistic regression + gate, leave-one-out over all labels (draft players only)",153,0.8169934640522876,0.7516339869281046,0.8758169934640523,210 labels (own + draft)

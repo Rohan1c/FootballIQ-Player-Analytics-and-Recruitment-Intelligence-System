@@ -1,0 +1,2 @@
+comparison,only_new_correct,only_original_correct,exact_mcnemar_p
+"logistic regression (leave-one-out) vs original engine, 153 held-out players",44,15,0.00020372185740785698

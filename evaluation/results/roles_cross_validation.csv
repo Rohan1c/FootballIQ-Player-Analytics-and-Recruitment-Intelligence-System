@@ -1,0 +1,6 @@
+classifier,labels,protocol,accuracy,sd_over_repeats
+logistic regression (C chosen by inner CV) + gate,211,10x repeated 5-fold CV,0.7649289099526065,0.016029890545296455
+logistic regression (C=0.1) + gate,211,10x repeated 5-fold CV,0.7777251184834123,0.01901058873946123
+logistic regression (C=0.1) + original gate,211,10x repeated 5-fold CV,0.7364928909952606,0.018501631560135647
+"logistic regression, no gate",211,10x repeated 5-fold CV,0.7374407582938388,0.01560386505512257
+nearest prototype + gate,211,10x repeated 5-fold CV,0.7706161137440758,0.012212415854715756
