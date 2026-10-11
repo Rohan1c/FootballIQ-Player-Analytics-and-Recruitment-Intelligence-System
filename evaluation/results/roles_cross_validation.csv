@@ -4,3 +4,4 @@ logistic regression (C=0.1) + gate,211,10x repeated 5-fold CV,0.7777251184834123
 logistic regression (C=0.1) + original gate,211,10x repeated 5-fold CV,0.7364928909952606,0.018501631560135647
 "logistic regression, no gate",211,10x repeated 5-fold CV,0.7374407582938388,0.01560386505512257
 nearest prototype + gate,211,10x repeated 5-fold CV,0.7706161137440758,0.012212415854715756
+experiment: + earlier rich-data seasons where available,211,10x repeated 5-fold CV,0.7886255924170615,0.012752250281586462

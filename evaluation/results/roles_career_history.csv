@@ -1,0 +1,5 @@
+classifier,labelled_players,n,accuracy,sd_over_repeats
+logistic regression (C=0.1) + gate,with history,153,0.7594771241830065,0.023889760630715125
+logistic regression (C=0.1) + gate,without history,58,0.8258620689655173,0.0195824425717251
+experiment: + earlier rich-data seasons where available,with history,153,0.7745098039215685,0.016339869281045756
+experiment: + earlier rich-data seasons where available,without history,58,0.8258620689655173,0.0195824425717251

@@ -59,6 +59,31 @@ def normalise_name(name: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+def find_by_name(query: str, keys, weights) -> int | None:
+    """Index of the best match for ``query`` among normalised names ``keys``.
+
+    Exact normalised name, then whole words, then the start of a word, then a fuzzy
+    match. Ties go to the entry with the largest weight (minutes played).
+    """
+    from difflib import get_close_matches
+    keys = np.asarray(keys, object)
+    key = normalise_name(query)
+    if not key:
+        return None
+    hits = np.flatnonzero(keys == key)
+    if len(hits) == 0:                                   # whole-word match ("valverde")
+        words = key.split()
+        hits = np.flatnonzero([all(w in k.split() for w in words) for k in keys])
+    if len(hits) == 0 and len(key) >= 4:                 # start of a word ("gravenb")
+        hits = np.flatnonzero([any(t.startswith(key) for t in k.split()) for k in keys])
+    if len(hits) == 0:
+        close = get_close_matches(key, list(set(keys)), n=1, cutoff=0.8)
+        hits = np.flatnonzero(keys == close[0]) if close else hits
+    if len(hits) == 0:
+        return None
+    return int(hits[np.argmax(np.asarray(weights, float)[hits])])
+
+
 def _tokens(key: str) -> set[str]:
     return {t for t in key.split() if t not in _SUFFIXES}
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from evaluation import benchmark_embeddings, benchmark_roles, benchmark_speed, common
+from evaluation import benchmark_corpus, benchmark_embeddings, benchmark_roles, benchmark_speed, common
 
 
 def _table(name: str, columns: list[str] | None = None, digits: int = 3) -> str:
@@ -70,6 +70,10 @@ def write_summary() -> None:
         "",
         "### 5.3 Cross-validation over all labels",
         "", _table("roles_cross_validation"),
+        "",
+        "The last row is an experiment: for players who also appear in the 2017-22 corpus, the "
+        "classifier additionally sees the rich statistics of their latest corpus season.",
+        "", _table("roles_career_history"),
         "", _table("roles_gate_reachability"),
         "",
         "### 5.4 Accuracy against number of training labels",
@@ -80,6 +84,45 @@ def write_summary() -> None:
         "",
         "## 6. Query latency",
         "", _table("speed", digits=4),
+        "",
+        "## 7. Multi-season corpus (big five leagues, 2017-18 to 2021-22)",
+        "",
+        "Sections 1 to 6 use the 2025-26 season, where FBref only publishes basic statistics. "
+        "This section uses five earlier seasons that also have passing, carrying, pressing and "
+        "shot-creation data. Models are fitted on 60% of the players and scored on a different 25%; "
+        "figures are means over five such splits.",
+        "", _table("corpus_cohort", digits=0),
+        "",
+        "### 7.1 Representations on held-out players",
+        "",
+        "`reid_*`: a player-season is the query and the gallery is every qualified player-season of the "
+        "following year (about 1,500). Top-1 means the player's own next season is the single nearest. "
+        "Purity and probe use Transfermarkt positions; a player's own other seasons never count as neighbours.",
+        "",
+        common.to_markdown(pd.read_csv(common.RESULTS / "corpus_representations.csv")[
+            ["representation", "dim", "reid_top1", "reid_top10", "reid_mrr", "position_purity@10",
+             "family_purity@10", "family_probe_F1", "minutes_R2", "same_club@10"]]),
+        "",
+        "Standard deviation over the five splits:",
+        "",
+        common.to_markdown(pd.read_csv(common.RESULTS / "corpus_representations.csv")[
+            ["representation", "reid_top1_sd", "reid_top10_sd", "family_purity@10_sd"]]),
+        "",
+        "### 7.2 Re-identification for players who stayed and players who changed club",
+        "", _table("corpus_reid_by_move"),
+        "",
+        "### 7.3 Role classification from statistics alone",
+        "",
+        "Labelled players are matched to their latest qualified corpus season. The labels describe "
+        "2025-26, so this is an approximation; the two feature sets are compared on identical players and folds.",
+        "", _table("corpus_roles"),
+        "",
+        "### 7.4 Real transfers",
+        "",
+        "For a club that both sold and bought a player in the same position group in one summer: how "
+        "does the signing rank, by similarity to the departed player, among everything other clubs "
+        "bought in that position group that summer? 0.5 would mean no relation.",
+        "", _table("corpus_transfers"),
         "",
     ]
     (common.RESULTS / "SUMMARY.md").write_text("\n".join(parts), encoding="utf-8")
@@ -92,6 +135,7 @@ def main() -> None:
     benchmark_embeddings.main()
     benchmark_roles.main()
     benchmark_speed.main()
+    benchmark_corpus.main()
     write_summary()
 
 

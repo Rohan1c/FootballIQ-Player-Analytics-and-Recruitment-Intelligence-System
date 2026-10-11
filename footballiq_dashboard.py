@@ -12,6 +12,7 @@ if hasattr(sys.stdout, "reconfigure"):          # player names contain accents (
 
 from footballiq import charts
 from footballiq.compatibility import compatibility_score
+from footballiq.history import get_history, print_similar_seasons, print_style_timeline
 from footballiq.report import generate_report
 from footballiq.scouting import print_global_lookalikes
 from footballiq.similarity import similar_players
@@ -162,8 +163,24 @@ def menu_global_scouting():
     pause()
 
 
+def menu_history():
+    section("9. Historical Explorer  --  2017-18 to 2021-22, with passing and pressing data")
+    name = ask()
+    history = get_history()
+    if history.find(name) is None:
+        print("  Player not found in the 2017-22 corpus (needs a season with 900+ minutes).")
+        pause()
+        return
+    text = input("  Season end year, 2018-2022 (blank for his latest): ").strip()
+    season = int(text) if text.isdigit() else None
+    only = input("  Only players available that same season? (y/n): ").strip().lower() == "y"
+    print_similar_seasons(name, season, top_n=10, same_season=only)
+    print_style_timeline(name)
+    pause()
+
+
 def menu_save_all():
-    section("9. Save All Visualizations")
+    section("10. Save All Visualizations")
     player = ask("Focal player for charts (default: Pedri): ") or "Pedri"
     _, name = (None, None) if get_store().find(player) is None else (None, player)
     if name is None:
@@ -186,6 +203,7 @@ MENU = [
     ("Starting XI Builder (4-3-3)", menu_starting_xi),
     ("Football Intelligence Report", menu_report),
     ("Global Scouting (12,000 players)", menu_global_scouting),
+    ("Historical Explorer (2017-22, rich data)", menu_history),
     ("Save All Visualizations", menu_save_all),
 ]
 
@@ -198,8 +216,8 @@ def main():
         header()
         print()
         for number, (label, _) in enumerate(MENU, 1):
-            print(f"  {number}.  {label}")
-        print("\n  0.  Exit\n")
+            print(f"  {number:>2}.  {label}")
+        print("\n   0.  Exit\n")
         choice = input("  Select option: ").strip()
         if choice == "0":
             print("\n  Goodbye.\n")

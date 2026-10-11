@@ -8,7 +8,6 @@ every player's role inside the query loop (about 11 s per query; see
 """
 from __future__ import annotations
 
-from difflib import get_close_matches
 from functools import lru_cache
 
 import numpy as np
@@ -63,21 +62,7 @@ class PlayerStore:
         code took the first alphabetical substring hit, so "Rodri" returned
         Rodrigo Bentancur and "Son" returned Brenden Aaronson.)
         """
-        key = linkage.normalise_name(name)
-        if not key:
-            return None
-        hits = np.flatnonzero(self.keys == key)
-        if len(hits) == 0:                                   # whole-word match ("valverde")
-            words = key.split()
-            hits = np.flatnonzero([all(w in k.split() for w in words) for k in self.keys])
-        if len(hits) == 0 and len(key) >= 4:                 # start of a word ("gravenb")
-            hits = np.flatnonzero([any(t.startswith(key) for t in k.split()) for k in self.keys])
-        if len(hits) == 0:
-            close = get_close_matches(key, list(self.keys), n=1, cutoff=0.8)
-            hits = np.flatnonzero(self.keys == close[0]) if close else hits
-        if len(hits) == 0:
-            return None
-        return int(hits[np.argmax(self.minutes[hits])])
+        return linkage.find_by_name(name, self.keys, self.minutes)
 
     def row(self, i: int) -> pd.Series:
         return self.players.iloc[i]

@@ -118,6 +118,65 @@ McNemar p = 0.0002).
 **Latency.** Best-partners and replacement queries: from about 11-12 s each to under 5 ms
 (exact timings depend on the machine; see section 6 of the summary).
 
+## 4b. Multi-season corpus (2017-18 to 2021-22)
+
+**Why it exists.** FBref deleted its advanced statistics in January 2026, which is why the
+2025-26 file has only 13 usable performance features. A public archive collected before
+the deletion (worldfootballR_data) has five full seasons of the big five leagues with
+passing, pass types, shot creation, defending, pressing, possession and carrying. It
+also carries a stable player id, the Transfermarkt position and market value of each
+player-season, and the transfers between clubs. `data/corpus/README.md` documents it.
+
+**Size.** 13,229 player-seasons, 5,309 players. Evaluation cohort: 7,491 outfield
+player-seasons with 900+ minutes (3,006 players), giving 4,070 consecutive-season pairs,
+829 of them with a change of club. 83 features, built like the live ones (shrunk per-90
+rates, shrunk ratios, per-event averages).
+
+**Protocol.** Players are split 60 / 15 / 25 into train, validation and test, five times.
+Everything is fitted on training players and scored on test players.
+
+- *Re-identification.* Query: a test player's season. Gallery: every qualified
+  player-season of the following year (about 1,500, all players). This is ground truth
+  that needs no labels, and there are about 1,030 queries per split instead of 76.
+- *Position.* Transfermarkt positions, a third source independent of both feature sets.
+  A player's own other seasons are never counted as neighbours.
+
+**Identity metric.** With several seasons per player, "the same player a year later" is a
+training signal. Linear discriminant analysis with players as classes rescales the space
+by the within-player scatter, as speaker-verification systems do with several recordings
+per speaker. A contrastive (InfoNCE) encoder is the neural counterpart.
+
+**Results on held-out players** (mean of five splits):
+
+| Representation | Top-1 | Top-10 | Family purity@10 |
+|---|---|---|---|
+| Thin statistics (13) | 0.060 | 0.254 | 0.635 |
+| Thin + identity metric | 0.066 | 0.293 | 0.648 |
+| Rich statistics (83) | 0.454 | 0.767 | 0.718 |
+| Rich + PCA-32 | 0.414 | 0.746 | 0.717 |
+| Rich + autoencoder-32 | 0.422 | 0.757 | 0.713 |
+| Rich + masked autoencoder-32 | 0.413 | 0.755 | 0.705 |
+| Rich + identity metric, linear (LDA-32) | **0.568** | 0.855 | 0.714 |
+| Rich + contrastive, linear | 0.557 | **0.859** | 0.681 |
+| Rich + contrastive, 1 hidden layer | 0.465 | 0.796 | 0.675 |
+| Rich + contrastive, 2 hidden layers | 0.410 | 0.754 | 0.675 |
+
+Players who changed club are harder to re-identify, which shows part of the signal is team
+context: top-10 is 0.895 for stayers and 0.695 for movers with the identity metric, against
+0.268 and 0.200 with thin statistics.
+
+**Roles from statistics alone** (153 labelled players found in the corpus, labels from
+2025-26 applied to their latest corpus season, same folds): 0.527 with thin statistics,
+0.641 with rich ones, chance 0.346. In the live system, adding a player's old rich
+statistics to his current features moves cross-validated accuracy from 0.778 to 0.789,
+which is inside the noise, so it is reported as an experiment and not shipped.
+
+**Real transfers.** For 236 club-summers in which a club made a permanent signing and a
+permanent sale in the same position group, the signing sits at the 45th to 46th percentile
+of that summer's market by similarity to the departed player (95% intervals about 0.42 to
+0.49). Clubs do pick look-alikes slightly more often than chance, and no representation
+explains their choices better than another.
+
 ## 5. How to read these results
 
 1. **The improvement is in the data and the features.** Going from the original features
@@ -135,6 +194,14 @@ McNemar p = 0.0002).
    classifier with no hand-set weights matches the rule engine out of sample (62-66%
    against 63-64%). More labels help: accuracy rises to about 77% with 211.
 5. **The originally reported 80.4% is not an out-of-sample figure.**
+6. **Data is the bottleneck, and the corpus measures by how much.** The same method goes
+   from 6% to 45% top-1 re-identification when 13 statistics become 83, and no model
+   recovers that gap from thin data (thin + identity metric: 7%).
+7. **Supervision by identity helps; depth does not.** The linear identity metric adds 11
+   points of top-1 over the standardised rich features. Networks with hidden layers
+   overfit with about 1,800 training players and fall back to the unsupervised level.
+8. **The identity metric changes what "near" means, not what the space contains.**
+   Position purity is the same with and without it (0.714 against 0.718).
 
 Something that was tried and dropped: a latent-consistency term that pulls the code of a
 masked input towards the code of the full input. It diverged with the live encoder as
@@ -154,7 +221,14 @@ made every missing-view metric worse.
   position signal into low-minute players. The main cohort is restricted to 900+ minutes,
   where the prior has little weight.
 - **Re-identification has 38 players.** The intervals are wide.
-- **One season, five leagues, and no passing or pressing data.**
+- **The live season has no passing or pressing data**, and the corpus that has them ends in
+  2021-22 and has no EA attributes. The two parts of the system cannot be merged.
+- **Re-identification rewards team context as well as style** (stayers are much easier than
+  movers). The mover subset is the cleaner test; both are reported.
+- **Role labels are applied to earlier seasons in the corpus experiment.** A player's role
+  in 2021-22 need not be his role in 2025-26.
+- **The transfer test is weak evidence.** Clubs replace players for many reasons, and the
+  sample is 236 club-summers.
 - **Compatibility, trio and XI outputs are not evaluated** and should be described as
   rule-based applications.
 
@@ -163,22 +237,25 @@ made every missing-view metric worse.
 1. Get the role labels verified by two annotators (`evaluation/README.md`), report
    Cohen's kappa, re-run the benchmarks. Aim for 300+ agreed labels.
 2. Decide on a full-back role (or drop full-backs from the role task and say so).
-3. Add passing and possession data if a source is available; this is the most likely
-   way to raise role accuracy further.
-4. If a second season can be added, test whether a player's embedding is stable from
-   one season to the next. That is a much stronger version of the re-identification test.
+3. Label roles for corpus seasons directly (for example 300 player-seasons from 2021-22),
+   so that roles can be evaluated on rich statistics without borrowing 2025-26 labels.
+4. Add EA attributes for 2017-22 if an archive can be found, to test the two-view model
+   on the corpus.
 
 ## 8. A paper outline that the evidence supports
 
-*Working title:* "What Actually Matters in Player-Similarity Systems: Linkage, Leakage
-and Evaluation in Football Recruitment Analytics".
+*Working title:* "What Actually Matters in Player-Similarity Systems: Data Richness,
+Identity Supervision and Evaluation in Football Recruitment Analytics".
 
 1. Introduction: similarity systems are easy to build and hard to evaluate.
 2. Related work: player embeddings, role discovery, record linkage, empirical-Bayes rate estimation.
 3. Data and linkage.
 4. Features: two views, shrinkage, what is left out and why.
-5. Evaluation protocol: the six tests of section 3 (the main contribution).
-6. Experiments: section 4, including the two negative results.
+5. Evaluation protocol: the tests of section 3 plus held-out re-identification across
+   seasons on the corpus (the main contribution).
+6. Experiments: sections 4 and 4b. The headline is the data ablation (13 against 83
+   statistics) and the identity metric; the negative results on autoencoders and deep
+   contrastive models belong next to them.
 7. Applications: global scouting, replacements, line-ups (qualitative).
 8. Limitations and future work.
 

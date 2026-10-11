@@ -6,6 +6,14 @@ and how he is rated (EA FC detailed attributes). It finds similar players, assig
 tactical roles, recommends replacements and partners, builds line-ups, and searches
 about 12,200 players from other leagues for look-alikes.
 
+It has two parts:
+
+- **Live system (2025-26).** The season FBref still covers, but only with basic statistics
+  since it removed its advanced data in January 2026.
+- **Multi-season corpus (2017-18 to 2021-22).** 13,229 player-seasons with passing,
+  carrying, pressing and shot-creation data, used to learn and test the similarity
+  metric properly and to power a historical explorer.
+
 Version 2 is a rebuild of the original internship project around a measured audit of
 its weaknesses. Every claim below is backed by a script in `evaluation/`; the full
 tables are in [`evaluation/results/SUMMARY.md`](evaluation/results/SUMMARY.md) and the
@@ -28,7 +36,24 @@ The 80.4% role accuracy reported for version 1 was measured on 46 players, 12 of
 were also the prototype exemplars and 5 of which were goalkeepers (correct by rule).
 See section 5 of the summary for the breakdown.
 
-Two findings are negative and are reported as such:
+## What better data buys (multi-season corpus)
+
+All figures are on players the models never saw during fitting (five random player splits).
+"Re-identification" asks: given a player's season, is his own next season the nearest of
+about 1,500 candidates?
+
+| | Statistics the 2025-26 file has (13) | Rich statistics (83) | Rich + identity metric |
+|---|---|---|---|
+| Next season is the single nearest | 6% | 45% | **57%** |
+| Next season is in the nearest 10 | 25% | 77% | **86%** |
+| Same, for players who changed club (nearest 10) | 20% | 57% | **70%** |
+| Neighbours in the same position group | 64% | 72% | 71% |
+| Role accuracy from statistics alone (153 labelled players) | 53% | 64% | - |
+
+The identity metric is linear discriminant analysis with players as classes: it learns from
+several seasons of the same player which statistics are stable and which are noise.
+
+Three findings are negative and are reported as such:
 
 - **The autoencoder does not beat PCA on this data.** With 44 features and about 1,800
   training players, a 16-dimension PCA matches or beats both autoencoder variants on
@@ -36,6 +61,14 @@ Two findings are negative and are reported as such:
   embedding a player from match statistics alone. PCA is therefore the default; the
   masked autoencoder is kept as an option (`EMBEDDING_METHOD = "mdae"` in
   `footballiq/config.py`).
+- **Deep models do not beat linear ones on the corpus either.** A linear identity metric
+  reaches 57% top-1 re-identification; contrastive networks with one and two hidden
+  layers reach 46% and 41%, and autoencoders re-identify fewer players than the plain
+  standardised features do (41-42% against 45%).
+  About 1,800 training players are not enough for the extra capacity.
+- **Clubs' real signings resemble the players they replace only slightly.** Measured on
+  236 club-summers, a signing sits at the 45th-46th percentile of the market by similarity
+  to the departed player (50 would be no relation), whichever representation is used.
 - **The gains come from data handling and feature design**, not from the model:
   record linkage, per-90 rates with empirical-Bayes shrinkage, removing availability
   columns, and treating goalkeepers separately.
@@ -106,6 +139,8 @@ weights, so its accuracy can be cross-validated.
 | `squad.py` | Best midfield trio; 4-3-3 built around any player |
 | `scouting.py` | **New.** Look-alikes among EA players outside the big five leagues |
 | `report.py` | One-page report combining all of the above |
+| `history.py` | **New.** Historical explorer on the 2017-22 corpus: similar player-seasons, value and age filters, style timeline |
+| `corpus.py`, `metric.py` | Corpus features (83 per-90 statistics) and the identity metrics learnt from them |
 | `charts.py` | Similarity, role, heatmap, network and embedding-map figures |
 
 **Global scouting** works because the embedding can be computed from attributes alone:
@@ -120,6 +155,16 @@ Players outside the big five leagues most similar to Pedri, aged 23 or under:
  3. Mohammed Diomande     CDM  age 23  Rangers
 ```
 
+**Historical explorer** uses the corpus, where the statistics are rich enough to separate
+styles of passing and pressing:
+
+```
+Most similar to Kevin De Bruyne in 2021-22 (Manchester City, Attacking Midfield):
+ 1. Bruno Fernandes     2021-22  Manchester Utd   shared: ThroughBalls, PassPenArea, KeyPasses
+ 2. Hakan Çalhanoğlu    2020-21  Milan            shared: Corners, KeyPasses, SCA
+ 3. Mason Mount         2021-22  Chelsea          shared: Corners, Ast, PassPenArea
+```
+
 ---
 
 ## Getting started
@@ -131,8 +176,8 @@ python footballiq_dashboard.py              # interactive menu
 python save_outputs.py --player "Pedri"     # write all charts to outputs/
 
 python -m footballiq.linkage                # rebuild data/players_linked.csv from the raw files
-python -m unittest discover -s tests        # 23 tests
-python -m evaluation.run_all                # all benchmarks, about 4 minutes
+python -m unittest discover -s tests        # 34 tests
+python -m evaluation.run_all                # all benchmarks, about 10 minutes
 ```
 
 From Python:
@@ -145,6 +190,10 @@ from footballiq.scouting import global_lookalikes
 similar_players("Pedri", top_n=5)
 find_replacements("Harry Kane", younger_only=True)
 global_lookalikes("Lamine Yamal", max_age=21)
+
+from footballiq.history import similar_seasons, style_timeline
+similar_seasons("Mohamed Salah", season=2018, same_season=True, max_value_eur=20e6)
+style_timeline("Joshua Kimmich")
 ```
 
 Dependencies are NumPy, pandas, scikit-learn, SciPy, Matplotlib, seaborn and NetworkX.
@@ -159,6 +208,8 @@ footballiq/            core package (see the tables above)
 footballiq_dashboard.py  terminal menu
 save_outputs.py        writes every chart
 data/                  raw FBref and EA files, and the linked table
+data/corpus/           multi-season corpus (see data/corpus/README.md for the source)
+scripts/               build_corpus.py: rebuilds the corpus from its public source
 evaluation/            benchmarks, role labels, results/
 tests/                 unit and regression tests
 docs/RESEARCH_NOTES.md findings, method, limitations, paper outline
@@ -173,14 +224,17 @@ outputs/               generated figures
 - **Role labels are few and partly unverified.** 58 are the author's; 153 were drafted
   by an AI assistant and must be checked by two human annotators before publication
   (`evaluation/README.md` explains how).
-- **FBref coverage is thin.** The available tables have shots, goals, crosses, fouls,
-  tackles won and interceptions, but no passing, carrying or pressing data. Roles that
-  differ mainly in passing (Deep Playmaker against Ball Winner) rest on EA attributes.
+- **The live season has thin statistics.** FBref removed its advanced data in January
+  2026, so the 2025-26 tables have shots, goals, crosses, fouls, tackles won and
+  interceptions, but no passing, carrying or pressing data. The corpus shows what that
+  costs (table above). Current players cannot be given rich statistics from a free source.
+- **The corpus ends in 2021-22** and has no EA attributes, so it is a research and
+  history tool, not a description of today's players.
 - **EA attributes are expert ratings**, not measurements.
 - **Compatibility, trio and XI scores are heuristics.** Their weights are design choices;
   there is no ground truth for "chemistry" in the data, so they are not validated.
 - **No full-back role.** Full-backs are forced into "Ball Playing Defender" or "Wide Winger".
-- One season, five leagues.
+- Five leagues only.
 
 ---
 

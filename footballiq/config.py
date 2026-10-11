@@ -12,6 +12,9 @@ PLAYERS_CSV = DATA_DIR / "players_linked.csv"          # output of footballiq.li
 LEGACY_MERGED = DATA_DIR / "final_merged_dataset.csv"  # original exact-name merge (baseline)
 LEGACY_DIR = ROOT / "legacy"
 LEGACY_EMBEDDINGS = LEGACY_DIR / "models" / "latent_embeddings.npy"
+CORPUS_DIR = DATA_DIR / "corpus"                       # multi-season corpus, see scripts/build_corpus.py
+CORPUS_SEASONS = CORPUS_DIR / "player_seasons.csv.gz"
+CORPUS_TRANSFERS = CORPUS_DIR / "transfers.csv.gz"
 ROLE_LABELS = ROOT / "evaluation" / "role_labels.csv"                        # the project's own labels
 ROLE_LABELS_DRAFT = ROOT / "evaluation" / "role_labels_draft_unverified.csv"  # see evaluation/README.md
 

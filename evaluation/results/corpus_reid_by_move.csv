@@ -1,0 +1,7 @@
+representation,group,queries,reid_top1,reid_top10
+"thin statistics (13), standardised",stayed at the same club,822.4,0.06648606161460802,0.26793604988063
+"thin statistics (13), standardised",changed club,205.8,0.032896368733472,0.2001316784067544
+"rich statistics (83), standardised",stayed at the same club,822.4,0.5109384865994545,0.8150967287286737
+"rich statistics (83), standardised",changed club,205.8,0.22403148305318377,0.5725857391277621
+"rich + identity metric, linear (LDA-32)",stayed at the same club,822.4,0.6318706064413782,0.895262399511882
+"rich + identity metric, linear (LDA-32)",changed club,205.8,0.3127028190962241,0.6946899888387483
