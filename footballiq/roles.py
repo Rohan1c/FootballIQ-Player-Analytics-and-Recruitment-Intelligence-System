@@ -101,3 +101,50 @@ class RoleClassifier:
     def predict(self, X: np.ndarray, positions=None) -> np.ndarray:
         proba = self.predict_proba(X, positions)
         return np.asarray(self.classes_, object)[proba.argmax(axis=1)]
+
+
+class CareerAwareRoleClassifier:
+    """Role classifier that also uses a player's earlier seasons when they are known.
+
+    The 2025-26 statistics contain no passing or pressing data. About 40% of current
+    outfield players also appear in the 2017-22 corpus, which does. For those players a
+    second classifier is trained on the current features plus the rich statistics of
+    their latest corpus season; everyone else is handled by the base classifier.
+
+    This is an experiment, not the shipped classifier: in cross-validation it adds about
+    one point of accuracy, which is inside the noise (``evaluation/benchmark_roles.py``).
+    Statistics that are four years old are a weak substitute for current ones.
+    """
+
+    MIN_HISTORY_LABELS = 60
+
+    def __init__(self, C: float = REGULARISATION, gate=None):
+        self.C, self.gate = C, gate
+
+    def fit(self, X, H, has_history, roles) -> "CareerAwareRoleClassifier":
+        roles = np.asarray(roles, object)
+        has_history = np.asarray(has_history, bool)
+        self.base = RoleClassifier(self.C, gate=self.gate).fit(X, roles)
+        self.classes_ = self.base.classes_
+        self.career = None
+        if has_history.sum() >= self.MIN_HISTORY_LABELS:
+            both = np.hstack([X[has_history], H[has_history]])
+            self.career = RoleClassifier(self.C, gate=self.gate).fit(both, roles[has_history])
+        return self
+
+    def predict_proba(self, X, H, has_history, positions=None) -> np.ndarray:
+        has_history = np.asarray(has_history, bool)
+        proba = self.base.predict_proba(X, positions)
+        if self.career is not None and has_history.any():
+            rows = np.flatnonzero(has_history)
+            sub = self.career.predict_proba(np.hstack([X[rows], H[rows]]),
+                                            None if positions is None else np.asarray(positions, object)[rows])
+            aligned = np.zeros((len(rows), len(self.classes_)))
+            for j, role in enumerate(self.career.classes_):
+                aligned[:, self.classes_.index(role)] = sub[:, j]
+            proba[rows] = aligned
+        return proba
+
+    def predict(self, X, H, has_history, positions=None) -> np.ndarray:
+        proba = self.predict_proba(X, H, has_history, positions)
+        return np.asarray(self.classes_, object)[proba.argmax(axis=1)]
