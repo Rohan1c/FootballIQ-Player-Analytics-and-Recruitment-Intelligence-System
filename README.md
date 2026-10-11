@@ -1,241 +1,186 @@
 # FootballIQ: Player Analytics and Recruitment Intelligence System
 
-An AI-powered football intelligence platform combining autoencoder-based representation learning, role archetype discovery, similarity modeling, compatibility analysis, transfer recommendations, and tactical squad construction using FBref statistics and FIFA attributes (~2059 players).
+A football scouting toolkit built on two independent descriptions of every player:
+what he did on the pitch (FBref season statistics, big five European leagues, 2025-26)
+and how he is rated (EA FC detailed attributes). It finds similar players, assigns
+tactical roles, recommends replacements and partners, builds line-ups, and searches
+about 12,200 players from other leagues for look-alikes.
+
+Version 2 is a rebuild of the original internship project around a measured audit of
+its weaknesses. Every claim below is backed by a script in `evaluation/`; the full
+tables are in [`evaluation/results/SUMMARY.md`](evaluation/results/SUMMARY.md) and the
+reasoning is in [`docs/RESEARCH_NOTES.md`](docs/RESEARCH_NOTES.md).
 
 ---
 
-## Project Overview
+## What changed from version 1, in numbers
 
-FootballIQ is a research-grade football analytics and scouting platform designed to assist clubs, analysts, and recruiters in evaluating players, discovering replacements, building squads, and analyzing tactical fit.
+| | Version 1 | Version 2 |
+|---|---|---|
+| Players kept by the FBref-EA merge | 2,057 (82% of minutes) | 2,366 (97% of minutes) |
+| Playing time predictable from the embedding (R², lower is better) | 0.80 | 0.10 |
+| Nearest neighbours in the same position group | 57% | 67% |
+| Same-role retrieval, mean average precision (58 own labels) | 0.32 | 0.49 |
+| Role accuracy on players the engine was not tuned on (153 draft labels) | 63% | 62-66% trained on the same 58 labels; about 77% cross-validated with all 211 |
+| "Best partners" or "replacements" query | about 11 s | under 5 ms |
 
-The system integrates statistical performance data from FBref with FIFA player attributes to produce actionable football intelligence across seven interconnected modules — all accessible through a single interactive dashboard.
+The 80.4% role accuracy reported for version 1 was measured on 46 players, 12 of which
+were also the prototype exemplars and 5 of which were goalkeepers (correct by rule).
+See section 5 of the summary for the breakdown.
+
+Two findings are negative and are reported as such:
+
+- **The autoencoder does not beat PCA on this data.** With 44 features and about 1,800
+  training players, a 16-dimension PCA matches or beats both autoencoder variants on
+  every measure of embedding quality. The masked autoencoder wins in one setting only:
+  embedding a player from match statistics alone. PCA is therefore the default; the
+  masked autoencoder is kept as an option (`EMBEDDING_METHOD = "mdae"` in
+  `footballiq/config.py`).
+- **The gains come from data handling and feature design**, not from the model:
+  record linkage, per-90 rates with empirical-Bayes shrinkage, removing availability
+  columns, and treating goalkeepers separately.
 
 ---
 
-## System Architecture
+## Pipeline
 
 ```
-Raw Data (FBref + FIFA)
-        |
-Data Preprocessing & Merging
-        |
-Autoencoder Training
-        |
-Latent Embeddings (latent_embeddings.npy)
-        |
-  ______________________________
-  |        |        |          |
-Similarity  Role   Compat.  Transfer
-Engine    Engine   Engine    Engine
-  |________|________|__________|
-                |
-        Squad Builder
-        Starting XI Builder
-        Intelligence Reports
+FBref season stats            EA FC attributes
+        |                            |
+        +------- record linkage -----+        footballiq/linkage.py
+                      |
+        +-------------+--------------+
+        |                            |
+performance view (13)        attribute view (31)   footballiq/features.py
+per-90, EB-shrunk            detailed ratings
+        |                            |
+        +-------- embedding ---------+        footballiq/embedding.py  (PCA-16 | masked AE)
+                      |
+   shared PlayerStore (features, embedding, roles)   footballiq/store.py
+                      |
+  similarity | roles | compatibility | transfer | squad | scouting | report
 ```
 
----
+### Data linkage (`footballiq/linkage.py`)
 
-## Dataset
+The original exact-name join lost 23% of players (Vinícius Júnior, Zubimendi and Gabriel
+among them), kept one club spell for mid-season movers, and matched a few players to a
+different person with the same name. The linkage now:
 
-Merged dataset of ~2057 players combining:
+1. sums a player's club spells into one season row;
+2. matches on an accent-insensitive name, confirmed by club or nation;
+3. matches within the same club on nicknames and short names ("Vini Jr.", "Gabriel");
+4. always requires the two sources to agree on age (within 2 years) and on goalkeeper status.
 
-**FBref Statistics**
-- Goals, assists, xG, xA
-- Passing metrics (progressive passes, key passes, pass completion)
-- Defensive actions (tackles, interceptions, pressures)
-- Progressive carries and passing distance
-- Playing time and 90s played
+### Features (`footballiq/features.py`)
 
-**FIFA Attributes**
-- Technical: pace, shooting, passing, dribbling, defending, physicality
-- Mental: vision, positioning, aggression, composure
-- Physical: strength, stamina, balance, jumping
+- **Performance view**: 11 per-90 rates and 2 ratios, each shrunk towards the positional
+  average in proportion to how little the player has played (Gamma-Poisson and
+  Beta-Binomial empirical Bayes).
+- **Attribute view**: 29 detailed EA attributes plus height and weight. The six "face"
+  ratings are dropped because they are weighted sums of the detailed ones.
+- Minutes, starts, points per match and plus/minus are left out: they describe
+  availability and team strength, not style.
+- Goalkeepers get their own feature set and their own similarity space.
 
-Position column (`Position`) contains FIFA-style labels:
-`GK CB RB LB CDM CM CAM RM LM RW LW ST`
+### Roles (`footballiq/roles.py`)
 
----
-
-## Machine Learning Pipeline
-
-### Autoencoder
-
-A feedforward autoencoder compresses high-dimensional player feature vectors into a compact latent space.
-
-- **Input**: normalized player stat + attribute vector
-- **Latent space**: lower-dimensional player embedding
-- **Output**: `models/latent_embeddings.npy`
-
-The latent embeddings capture player style, tendencies, and hidden football characteristics beyond raw statistics — enabling meaningful similarity and compatibility computation.
-
----
-
-## Modules
-
-### 1. Similarity Engine (`models/similarity_engine.py`)
-
-Finds players with the most similar profiles using position-weighted latent embeddings and Euclidean distance similarity.
-
-```
-Input:  Pedri
-Output:
-  1. Frenkie de Jong      0.927
-  2. Nicolo Barella        0.916
-  3. Martin Odegaard       0.915
-  4. Warren Zaire-Emery    0.913
-  5. Federico Valverde     0.912
-```
-
-### 2. Prototype Role Engine (`models/prototype_role_engine.py`)
-
-Classifies players into tactical archetypes using exemplar-based prototype vectors and positional gating.
-
-**Architecture:**
-- Layer 1 — Positional gate: restricts eligible roles by FIFA position (e.g. GK cannot be classified as Ball Playing Defender)
-- Layer 2 — Weighted prototype matching: cosine similarity on role-specific feature subsets
-- Layer 3 — Confidence threshold: returns "Undefined" rather than a wrong label
-
-**Supported roles:**
+A regularised logistic regression on the 44 features, followed by the position gate
+(a centre-back cannot be a Poacher). It replaces the hand-written bonus and penalty
+weights, so its accuracy can be cross-validated.
 
 | Category | Roles |
 |---|---|
 | Midfield | Deep Playmaker, Creative Playmaker, Ball Winner, Box-to-Box |
 | Attack | Wide Winger, Creative Winger, Inside Forward, False 9, Poacher, Target Forward |
-| Defense | Ball Playing Defender, Defensive Defender |
+| Defence | Ball Playing Defender, Defensive Defender |
 | Goalkeeper | Goalkeeper |
 
-```
-Input:  Rodri
-Output: Deep Playmaker (0.891)
-```
+### Engines
 
-### 3. Compatibility Engine (`models/compatibility_engine.py`)
+| Module | What it does |
+|---|---|
+| `similarity.py` | Most similar players in the same position group, with the features they share |
+| `compatibility.py` | Pairwise tactical compatibility (original formula, vectorised) |
+| `transfer.py` | Replacement candidates by style, role, position and age |
+| `squad.py` | Best midfield trio; 4-3-3 built around any player |
+| `scouting.py` | **New.** Look-alikes among EA players outside the big five leagues |
+| `report.py` | One-page report combining all of the above |
+| `charts.py` | Similarity, role, heatmap, network and embedding-map figures |
 
-Scores tactical chemistry between two players using a combination of embedding similarity, positional fit, role compatibility, and statistical complementarity.
-
-### 4. Transfer Engine (`models/transfer_engine.py`)
-
-Recommends replacement candidates for a given player filtered by role match, positional fit, and age.
-
-```
-Input:  Pedri
-Output:
-  1. Joao Neves
-  2. Gavi
-  3. Warren Zaire-Emery
-```
-
-### 5. Squad Builder (`models/squad_builder.py`)
-
-Constructs the optimal midfield trio from the dataset by maximizing pairwise chemistry, tactical balance, and role diversity.
+**Global scouting** works because the embedding can be computed from attributes alone:
+the missing performance view is predicted from the attributes by ridge regression.
+For held-out players, the attribute-only embedding has the player's own full embedding
+among its 10 nearest in 92% of cases (summary, section 3).
 
 ```
-Output:
-  Pedri / Martin Odegaard / Joshua Kimmich
-  Tactical Score: 0.946
-```
-
-### 6. Starting XI Builder (`models/starting_xi_builder.py`)
-
-Builds a complete 4-3-3 tactical lineup around a selected anchor player using FIFA positions, role bonuses, and compatibility scoring.
-
-### 7. Football Intelligence Report (`models/football_intelligence_report.py`)
-
-Aggregates all modules into a single player report covering role analysis, similar players, compatible partners, transfer candidates, and tactical recommendations.
-
----
-
-## Visualizations
-
-| Visualization | File | Description |
-|---|---|---|
-| Latent Space | `visualizations/latent_space_visualization.py` | t-SNE projection of player embeddings colored by position |
-| Similarity Chart | `visualizations/similarity_chart.py` | Horizontal bar chart of top similar players |
-| Compatibility Heatmap | `visualizations/compatibility_heatmap.py` | Pairwise chemistry matrix |
-| Squad Network | `visualizations/squad_network.py` | Graph of player compatibility with role-colored nodes |
-| Role Probability Chart | `visualizations/role_probability_chart.py` | Top-5 archetype scores for a player |
-
-All figures are saved to `outputs/` via `save_outputs.py`.
-
----
-
-## Project Structure
-
-```
-ANN_football/
-|
-|-- footballiq_dashboard.py       # Main entry point
-|-- save_outputs.py               # Saves all visualizations to outputs/
-|-- requirements.txt
-|-- README.md
-|
-|-- models/
-|   |-- autoencoder.py
-|   |-- similarity_engine.py
-|   |-- compatibility_engine.py
-|   |-- prototype_role_engine.py
-|   |-- recruitment_assistant.py
-|   |-- transfer_engine.py
-|   |-- squad_builder.py
-|   |-- starting_xi_builder.py
-|   |-- football_intelligence_report.py
-|   |-- football_intelligence.py
-|   |-- chemistry_engine.py
-|   |-- latent_embeddings.npy
-|   |-- encoder_model.keras
-|
-|-- visualizations/
-|   |-- latent_space_visualization.py
-|   |-- similarity_chart.py
-|   |-- compatibility_heatmap.py
-|   |-- squad_network.py
-|   |-- role_probability_chart.py
-|
-|-- data/
-|   |-- final_merged_dataset.csv
-|
-|-- outputs/
-|   |-- latent_space.png
-|   |-- similarity_chart.png
-|   |-- compatibility_heatmap.png
-|   |-- squad_network.png
-|   |-- role_probability_chart.png
-|
-|-- notebooks/
-|-- data_preprocessing.py
-|-- dataset_merge.py
+Players outside the big five leagues most similar to Pedri, aged 23 or under:
+ 1. Christos Zafeiris     CM   age 22  Slavia Praha
+ 2. Kian Fitz-Jim         CM   age 22  Ajax
+ 3. Mohammed Diomande     CDM  age 23  Rangers
 ```
 
 ---
 
-## Getting Started
+## Getting started
 
-**Install dependencies**
 ```bash
 pip install -r requirements.txt
+
+python footballiq_dashboard.py              # interactive menu
+python save_outputs.py --player "Pedri"     # write all charts to outputs/
+
+python -m footballiq.linkage                # rebuild data/players_linked.csv from the raw files
+python -m unittest discover -s tests        # 23 tests
+python -m evaluation.run_all                # all benchmarks, about 4 minutes
 ```
 
-**Run the dashboard**
-```bash
-python footballiq_dashboard.py
+From Python:
+
+```python
+from footballiq.similarity import similar_players
+from footballiq.transfer import find_replacements
+from footballiq.scouting import global_lookalikes
+
+similar_players("Pedri", top_n=5)
+find_replacements("Harry Kane", younger_only=True)
+global_lookalikes("Lamine Yamal", max_age=21)
 ```
 
-**Save all visualizations**
-```bash
-python save_outputs.py --player "Pedri"
+Dependencies are NumPy, pandas, scikit-learn, SciPy, Matplotlib, seaborn and NetworkX.
+The masked autoencoder is written in NumPy, so no deep-learning framework is needed.
+
+---
+
+## Repository layout
+
+```
+footballiq/            core package (see the tables above)
+footballiq_dashboard.py  terminal menu
+save_outputs.py        writes every chart
+data/                  raw FBref and EA files, and the linked table
+evaluation/            benchmarks, role labels, results/
+tests/                 unit and regression tests
+docs/RESEARCH_NOTES.md findings, method, limitations, paper outline
+legacy/                version 1, kept runnable as the benchmark baseline
+outputs/               generated figures
 ```
 
 ---
 
-## Tech Stack
+## Limitations
 
-- **Python** — core language
-- **TensorFlow / Keras** — autoencoder training
-- **NumPy / Pandas** — data processing
-- **Scikit-learn** — similarity metrics, t-SNE
-- **Matplotlib / Seaborn** — visualization
-- **NetworkX** — squad compatibility graph
+- **Role labels are few and partly unverified.** 58 are the author's; 153 were drafted
+  by an AI assistant and must be checked by two human annotators before publication
+  (`evaluation/README.md` explains how).
+- **FBref coverage is thin.** The available tables have shots, goals, crosses, fouls,
+  tackles won and interceptions, but no passing, carrying or pressing data. Roles that
+  differ mainly in passing (Deep Playmaker against Ball Winner) rest on EA attributes.
+- **EA attributes are expert ratings**, not measurements.
+- **Compatibility, trio and XI scores are heuristics.** Their weights are design choices;
+  there is no ground truth for "chemistry" in the data, so they are not validated.
+- **No full-back role.** Full-backs are forced into "Ball Playing Defender" or "Wide Winger".
+- One season, five leagues.
 
 ---
 
@@ -243,10 +188,8 @@ python save_outputs.py --player "Pedri"
 
 MIT License
 
----
-
 ## Author
 
-**Rohan Srinivas Ponnana**  
-CSE Artificial Intelligence & Machine Learning  
+**Rohan Srinivas Ponnana**
+CSE Artificial Intelligence & Machine Learning
 Football Analytics · Representation Learning · Recruitment Intelligence
