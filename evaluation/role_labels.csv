@@ -1,0 +1,64 @@
+player,born,role,source,position,minutes
+Maximilian Arnold,1994,Deep Playmaker,validation,CDM,1859
+Danilo Cataldi,1994,Deep Playmaker,validation,CDM,1985
+Branco van den Boomen,1995,Deep Playmaker,validation,CM,1238
+Lewis Cook,1997,Deep Playmaker,validation,CDM,874
+Enzo Fernández,2001,Deep Playmaker,validation,CM,3115
+Pedri,2002,Creative Playmaker,validation,CM,2104
+Kevin De Bruyne,1991,Creative Playmaker,validation,CM,1165
+Martin Ødegaard,1998,Creative Playmaker,validation,CM,1369
+Bruno Fernandes,1994,Creative Playmaker,validation,CAM,3063
+Jamal Musiala,2003,Creative Playmaker,validation,CAM,683
+Florian Wirtz,2003,Creative Playmaker,validation,CAM,2378
+Dani Olmo,1998,Creative Playmaker,validation,CAM,2067
+James Maddison,1996,Creative Playmaker,validation,CM,37
+Casemiro,1992,Ball Winner,validation,CDM,2571
+Manuel Ugarte,2001,Ball Winner,validation,CDM,887
+Moisés Caicedo,2001,Ball Winner,validation,CDM,2795
+Ryan Gravenberch,2002,Box-to-Box,validation,CDM,2992
+Conor Gallagher,2000,Box-to-Box,validation,CM,1863
+Warren Zaïre-Emery,2006,Box-to-Box,validation,CM,2447
+Douglas Luiz,1998,Box-to-Box,validation,CM,919
+Nicolò Barella,1997,Box-to-Box,validation,CM,2517
+Nico Williams,2002,Wide Winger,validation,LM,1674
+Michael Olise,2001,Creative Winger,validation,RM,2316
+Mohamed Salah,1992,Creative Winger,validation,RM,2146
+Kylian Mbappé,1998,Inside Forward,validation,ST,2599
+Rodrygo,2001,Inside Forward,validation,RW,684
+Khvicha Kvaratskhelia,2001,Inside Forward,validation,LW,1479
+Erling Haaland,2000,Poacher,validation,ST,2953
+Harry Kane,1993,Poacher,validation,ST,2377
+Robert Lewandowski,1988,Poacher,validation,ST,1664
+Lautaro Martínez,1997,Poacher,validation,ST,2159
+Olivier Giroud,1986,Target Forward,validation,ST,1609
+Kai Havertz,1999,False 9,validation,ST,581
+Virgil van Dijk,1991,Ball Playing Defender,validation,CB,3420
+William Saliba,2001,Ball Playing Defender,validation,CB,2614
+John Stones,1994,Ball Playing Defender,validation,CB,439
+Rúben Dias,1997,Ball Playing Defender,validation,CB,2141
+Alessandro Bastoni,1999,Ball Playing Defender,validation,CB,2239
+Pau Torres,1997,Ball Playing Defender,validation,CB,1676
+Pau Cubarsí,2007,Ball Playing Defender,validation,CB,2703
+Cristian Romero,1998,Defensive Defender,validation,CB,1868
+Ibrahima Konaté,1999,Defensive Defender,validation,CB,3090
+Alisson,1992,Goalkeeper,validation,GK,2340
+Mike Maignan,1995,Goalkeeper,validation,GK,3295
+Gianluigi Donnarumma,1999,Goalkeeper,validation,GK,3060
+Jan Oblak,1993,Goalkeeper,validation,GK,2700
+Thibaut Courtois,1992,Goalkeeper,validation,GK,2880
+Rodri,1996,Deep Playmaker,exemplar,CDM,1511
+Hakan Çalhanoğlu,1994,Deep Playmaker,exemplar,CDM,1639
+Aurélien Tchouaméni,2000,Ball Winner,exemplar,CDM,2615
+Declan Rice,1999,Ball Winner,exemplar,CDM,3094
+Federico Valverde,1998,Box-to-Box,exemplar,CM,2740
+Raphinha,1996,Wide Winger,exemplar,LM,1380
+Bukayo Saka,2001,Wide Winger,exemplar,RW,2222
+Adama Traoré,1996,Wide Winger,exemplar,RM,395
+Cole Palmer,2002,Creative Winger,exemplar,CAM,1955
+Viktor Gyökeres,1998,Poacher,exemplar,ST,2224
+Romelu Lukaku,1993,Target Forward,exemplar,ST,44
+Dušan Vlahović,2000,Target Forward,exemplar,ST,968
+Antoine Griezmann,1991,False 9,exemplar,ST,1481
+Nikola Milenković,1997,Defensive Defender,exemplar,CB,3375
+Fikayo Tomori,1997,Defensive Defender,exemplar,CB,2554
+Jules Koundé,1998,Defensive Defender,exemplar,RB,2261
